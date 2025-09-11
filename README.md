@@ -31,3 +31,13 @@ For a full breakdown of all features and how to use them, check out [FEATURES.md
 Tech: .NET 8 Console App + Spectre.Console + JSON storage  
 
 💡 Pro tip: Don’t mess with the Tour Leader logic… it knows if you’re cheating 😉
+
+## 📦 Download & Run
+
+1. Go to the [GitHub Releases page](https://github.com/FrankOfTheScience/CassaComuneAnM/releases).  
+2. Download `CassaComuneAnM_v1.0.0.zip`.  
+3. Extract it anywhere on your PC.  
+4. Double click on the file `CassaComuneAnM.exe`
+
+That’s it! The app will guide you through creating trips, adding participants, and recording deposits/expenses.
+
