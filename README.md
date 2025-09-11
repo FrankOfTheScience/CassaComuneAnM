@@ -1,6 +1,8 @@
 # CassaComuneAnM 🏖️💰
 
-Managing a common fund for a trip has never been this… organized. Apparently, no app existed for it, so I built one.  
+Managing a common fund for a trip has never been this… organized. 
+## The problem
+I am a coordinator for a Travel Agency and one of the tool the self-managed group use is the "Cassa comune" or "Common fund", in which the members of a travel group deposit a certain amount of cash to use for common expenses. Apparently, no app existed for it, yeah hard to believe it, I don't mean apps like "Tricount" or "Splitwise", those apps don't manage common fund expenses but _just_ common expenses with group compensation, so I built one.  
 
 **CassaComuneAnM 1.0.0** is a console app to track trip participants, deposits, expenses, and even custom rules like “Tour Leader free” or per-person reimbursements.  
 
