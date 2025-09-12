@@ -1,0 +1,68 @@
+[
+  {
+    "TripName": "Example Adventure Trip",
+    "TripCode": "0001",
+    "TripDate": "2025-09-01T00:00:00",
+    "CoordinatorName": "John Doe",
+    "CoordinatorCode": "1001",
+    "CashierName": "Jane Smith",
+    "Country": "Italy",
+    "Currency": "Euro",
+    "ExchangeRate": 1.0,
+    "BudgetPerPax": 1000,
+    "Participants": [
+      {
+        "Name": "Alice",
+        "Balance": 0,
+        "PersonalBudget": 1000,
+        "Deposits": [],
+        "TotalPaid": 0
+      },
+      {
+        "Name": "Bob",
+        "Balance": 0,
+        "PersonalBudget": 1000,
+        "Deposits": [],
+        "TotalPaid": 0
+      }
+    ],
+    "Expenses": [
+      {
+        "Date": "2025-09-02T00:00:00",
+        "Description": "Hotel Stay",
+        "Amount": 200.0,
+        "TourLeaderFree": false,
+        "Beneficiaries": [
+          "Alice",
+          "Bob"
+        ]
+      },
+      {
+        "Date": "2025-09-02T00:00:00",
+        "Description": "Dinner",
+        "Amount": 50.0,
+        "TourLeaderFree": false,
+        "Beneficiaries": [
+          "Alice",
+          "Bob"
+        ]
+      }
+    ],
+    "Deposits": [
+      {
+        "Date": "2025-09-01T00:00:00",
+        "PayerName": "Alice",
+        "Amount": 500
+      },
+      {
+        "Date": "2025-09-01T00:00:00",
+        "PayerName": "Bob",
+        "Amount": 500
+      }
+    ],
+    "TotalBudget": 2000,
+    "TotalPaid": 1000,
+    "TotalExpenses": 250.0,
+    "CashBalance": 750.0
+  }
+]
