@@ -6,11 +6,11 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Spese">
     <ScrollView>
-        <VerticalStackLayout Padding="{OnIdiom Phone='16', Tablet='24'}" Spacing="18" MaximumWidthRequest="760" HorizontalOptions="Center">
+        <VerticalStackLayout Padding="{OnIdiom Phone='18', Tablet='28'}" Spacing="20" MaximumWidthRequest="760" HorizontalOptions="Center">
             <Label Style="{StaticResource HeroLabel}" FontSize="24" Text="SPESE" />
             <Label Style="{StaticResource MutedLabel}" Text="REGISTRA, MODIFICA E CONTROLLA LE SPESE DEL VIAGGIO." />
 
-            <Frame Padding="16" BackgroundColor="{StaticResource SurfaceAlt}" BorderColor="{StaticResource BorderStrong}">
+            <Frame Style="{StaticResource MetricCardFrame}" Padding="16" BackgroundColor="{StaticResource SurfaceAlt}" BorderColor="{StaticResource BorderStrong}">
                 <VerticalStackLayout Spacing="10">
                     <Entry Placeholder="Descrizione spesa" Text="{Binding Description}" />
                     <Border Style="{StaticResource FieldShell}">
@@ -43,8 +43,18 @@
                         <Label VerticalTextAlignment="Center" Text="Tour leader gratuito" />
                     </HorizontalStackLayout>
                     <Label FontSize="12" Text="{Binding HelperText}" TextColor="#52606D" />
-                    <Label Style="{StaticResource MutedLabel}" Text="{Binding ExpenseCoverageText}" />
-                    <ProgressBar Progress="{Binding ExpenseCoverageProgress}" ProgressColor="{StaticResource Primary}" />
+                    <Frame Style="{StaticResource ListCardFrame}" Padding="14">
+                        <VerticalStackLayout Spacing="6">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Label Style="{StaticResource SectionLabel}" FontSize="13" Text="SATURAZIONE SPESE" />
+                                <Label Grid.Column="1" Style="{StaticResource MetricCaptionLabel}" Text="{Binding ExpenseCoverageProgress, StringFormat='{0:P0}'}" />
+                            </Grid>
+                            <Label Style="{StaticResource MutedLabel}" Text="{Binding ExpenseCoverageText}" />
+                            <Grid Style="{StaticResource ProgressTrack}">
+                                <ProgressBar Progress="{Binding ExpenseCoverageProgress}" ProgressColor="{StaticResource Primary}" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Frame>
 
                     <Label Style="{StaticResource SectionLabel}" FontSize="13" Text="ESCLUDI PARTECIPANTI DAL BENEFICIO" />
                     <VerticalStackLayout BindableLayout.ItemsSource="{Binding Participants}" Spacing="8">
@@ -65,16 +75,11 @@
             </Frame>
 
             <Label Style="{StaticResource SectionLabel}" Text="STORICO SPESE" />
-            <Grid ColumnDefinitions="1.4*,1.0*,1.2*,1.4*" ColumnSpacing="8" Padding="4,0">
-                <Label Style="{StaticResource FieldLabel}" Text="DESCRIZIONE" />
-                <Label Grid.Column="1" Style="{StaticResource FieldLabel}" Text="DATA" />
-                <Label Grid.Column="2" Style="{StaticResource FieldLabel}" Text="IMPORTO" />
-                <Label Grid.Column="3" Style="{StaticResource FieldLabel}" Text="BENEFICIARI" />
-            </Grid>
+            <Label Style="{StaticResource MutedLabel}" Text="Vista storica a card con dettaglio rapido di importo e beneficiari." />
             <CollectionView EmptyView="Nessuna spesa." ItemsSource="{Binding Expenses}">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <Frame Margin="0,0,0,12" Padding="14" BackgroundColor="{StaticResource SurfaceAlt}">
+                        <Frame Style="{StaticResource ListCardFrame}">
                             <VerticalStackLayout Spacing="6">
                                 <Label Style="{StaticResource CardTitleLabel}" FontSize="15" Text="{Binding Description, Converter={StaticResource UppercaseConverter}}" />
                                 <Label Text="{Binding Date, StringFormat='Data: {0:dd/MM/yyyy}'}" />

@@ -6,11 +6,11 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Versamenti">
     <ScrollView>
-        <VerticalStackLayout Padding="{OnIdiom Phone='16', Tablet='24'}" Spacing="18" MaximumWidthRequest="760" HorizontalOptions="Center">
+        <VerticalStackLayout Padding="{OnIdiom Phone='18', Tablet='28'}" Spacing="20" MaximumWidthRequest="760" HorizontalOptions="Center">
             <Label Style="{StaticResource HeroLabel}" FontSize="24" Text="VERSAMENTI" />
             <Label Style="{StaticResource MutedLabel}" Text="TIENI TRACCIA DEGLI IMPORTI VERSATI E DEL RESIDUO DISPONIBILE." />
 
-            <Frame Padding="16" BackgroundColor="{StaticResource SurfaceAlt}" BorderColor="{StaticResource BorderStrong}">
+            <Frame Style="{StaticResource MetricCardFrame}" Padding="16" BackgroundColor="{StaticResource SurfaceAlt}" BorderColor="{StaticResource BorderStrong}">
                 <VerticalStackLayout Spacing="10">
                     <Border Style="{StaticResource FieldShell}">
                         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
@@ -50,8 +50,18 @@
                                 Text="DATA" />
                         </Grid>
                     </Border>
-                    <Label Style="{StaticResource MutedLabel}" Text="{Binding DepositCoverageText}" />
-                    <ProgressBar Progress="{Binding DepositCoverageProgress}" ProgressColor="{StaticResource Primary}" />
+                    <Frame Style="{StaticResource ListCardFrame}" Padding="14">
+                        <VerticalStackLayout Spacing="6">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Label Style="{StaticResource SectionLabel}" FontSize="13" Text="COPERTURA VERSAMENTI" />
+                                <Label Grid.Column="1" Style="{StaticResource MetricCaptionLabel}" Text="{Binding DepositCoverageProgress, StringFormat='{0:P0}'}" />
+                            </Grid>
+                            <Label Style="{StaticResource MutedLabel}" Text="{Binding DepositCoverageText}" />
+                            <Grid Style="{StaticResource ProgressTrack}">
+                                <ProgressBar Progress="{Binding DepositCoverageProgress}" ProgressColor="{StaticResource Primary}" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Frame>
                     <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
                     <Button Command="{Binding AddDepositCommand}" IsEnabled="{Binding IsNotBusy}" Text="{Binding SubmitButtonText}" />
                     <Button Command="{Binding CancelEditCommand}" IsEnabled="{Binding IsNotBusy}" IsVisible="{Binding IsEditing}" Style="{StaticResource TertiaryButton}" Text="ANNULLA MODIFICA" />
@@ -59,16 +69,11 @@
             </Frame>
 
             <Label Style="{StaticResource SectionLabel}" Text="STORICO VERSAMENTI" />
-            <Grid ColumnDefinitions="1.2*,1.1*,1.3*,1.4*" ColumnSpacing="8" Padding="4,0">
-                <Label Style="{StaticResource FieldLabel}" Text="PAGANTE" />
-                <Label Grid.Column="1" Style="{StaticResource FieldLabel}" Text="DATA" />
-                <Label Grid.Column="2" Style="{StaticResource FieldLabel}" Text="IMPORTO" />
-                <Label Grid.Column="3" Style="{StaticResource FieldLabel}" Text="RESIDUO" />
-            </Grid>
+            <Label Style="{StaticResource MutedLabel}" Text="Vista storica a card per consultazione rapida di pagante, importo e residuo." />
             <CollectionView EmptyView="Nessun versamento." ItemsSource="{Binding Deposits}">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <Frame Margin="0,0,0,12" Padding="14" BackgroundColor="{StaticResource SurfaceAlt}">
+                        <Frame Style="{StaticResource ListCardFrame}">
                             <VerticalStackLayout Spacing="6">
                                 <Label Style="{StaticResource CardTitleLabel}" FontSize="15" Text="{Binding PayerName, Converter={StaticResource UppercaseConverter}}" />
                                 <Label Text="{Binding Date, StringFormat='Data: {0:dd/MM/yyyy}'}" />
