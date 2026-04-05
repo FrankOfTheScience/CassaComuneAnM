@@ -19,9 +19,14 @@ public class TripDetailViewModel : BaseViewModel
     private bool _isEditingTrip;
     private CurrencyCode? _selectedCurrency;
     private string _exchangeRateInput = string.Empty;
+    private readonly List<ParticipantSummaryViewModel> _allParticipantSummaries = new();
+    private string _participantSearchText = string.Empty;
+    private string _selectedParticipantSortOption = "NOME";
+    private bool _participantSortDescending;
 
     public ObservableCollection<ParticipantSummaryViewModel> ParticipantSummaries { get; } = new();
     public IReadOnlyList<CurrencyOption> CurrencyOptions { get; } = CurrencyCatalog.All;
+    public IReadOnlyList<string> ParticipantSortOptions { get; } = new[] { "NOME", "BUDGET", "VERSATO", "RESIDUO" };
 
     public Trip? Trip
     {
@@ -65,6 +70,21 @@ public class TripDetailViewModel : BaseViewModel
         get => _exchangeRateInput;
         set => SetProperty(ref _exchangeRateInput, value);
     }
+
+    public string ParticipantSearchText
+    {
+        get => _participantSearchText;
+        set
+        {
+            if (SetProperty(ref _participantSearchText, value))
+            {
+                ApplyParticipantFilters();
+            }
+        }
+    }
+
+    public string SelectedParticipantSortOption => _selectedParticipantSortOption;
+    public string ParticipantSortDirectionLabel => _participantSortDescending ? "DESC" : "ASC";
 
     public string TripDateDisplay => Trip?.TripDate.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("it-IT")) ?? string.Empty;
 
@@ -151,6 +171,8 @@ public class TripDetailViewModel : BaseViewModel
     public ICommand CancelTripEditCommand { get; }
     public ICommand SelectCurrencyCommand { get; }
     public ICommand SelectTripDateCommand { get; }
+    public ICommand SelectParticipantSortCommand { get; }
+    public ICommand ToggleParticipantSortDirectionCommand { get; }
 
     public TripDetailViewModel(ITripService tripService, IServiceProvider serviceProvider, string tripCode)
     {
@@ -168,6 +190,8 @@ public class TripDetailViewModel : BaseViewModel
         CancelTripEditCommand = new Command(CancelTripEdit);
         SelectCurrencyCommand = new Command(async () => await SelectCurrencyAsync());
         SelectTripDateCommand = new Command(async () => await SelectTripDateAsync());
+        SelectParticipantSortCommand = new Command(async () => await SelectParticipantSortAsync());
+        ToggleParticipantSortDirectionCommand = new Command(ToggleParticipantSortDirection);
     }
 
     public async Task LoadTripAsync()
@@ -182,6 +206,7 @@ public class TripDetailViewModel : BaseViewModel
             IsBusy = true;
             Trip = await _tripService.GetTripByCodeAsync(_tripCode);
             ParticipantSummaries.Clear();
+            _allParticipantSummaries.Clear();
 
             if (Trip is not null)
             {
@@ -192,7 +217,7 @@ public class TripDetailViewModel : BaseViewModel
                 {
                     var totalPaid = participant.Deposits.Sum(d => d.Amount);
                     var remainingBudget = participant.PersonalBudget - totalPaid;
-                    ParticipantSummaries.Add(new ParticipantSummaryViewModel
+                    _allParticipantSummaries.Add(new ParticipantSummaryViewModel
                     {
                         Name = participant.Name,
                         PersonalBudgetInEur = participant.PersonalBudget,
@@ -207,6 +232,8 @@ public class TripDetailViewModel : BaseViewModel
                     });
                 }
             }
+
+            ApplyParticipantFilters();
         }
         finally
         {
@@ -380,5 +407,54 @@ public class TripDetailViewModel : BaseViewModel
         OnPropertyChanged(nameof(CashDeficitWarningText));
         OnPropertyChanged(nameof(ExpensesVsPaidProgress));
         OnPropertyChanged(nameof(PaidVsBudgetProgress));
+    }
+
+    private async Task SelectParticipantSortAsync()
+    {
+        var selected = await ShowSelectionAsync(
+            "Ordina situazione cassa",
+            "Scegli come ordinare la situazione cassa per partecipante.",
+            ParticipantSortOptions,
+            option => option,
+            _selectedParticipantSortOption);
+
+        if (!string.IsNullOrWhiteSpace(selected))
+        {
+            _selectedParticipantSortOption = selected;
+            OnPropertyChanged(nameof(SelectedParticipantSortOption));
+            ApplyParticipantFilters();
+        }
+    }
+
+    private void ToggleParticipantSortDirection()
+    {
+        _participantSortDescending = !_participantSortDescending;
+        OnPropertyChanged(nameof(ParticipantSortDirectionLabel));
+        ApplyParticipantFilters();
+    }
+
+    private void ApplyParticipantFilters()
+    {
+        IEnumerable<ParticipantSummaryViewModel> query = _allParticipantSummaries;
+
+        if (!string.IsNullOrWhiteSpace(ParticipantSearchText))
+        {
+            var term = ParticipantSearchText.Trim();
+            query = query.Where(item => item.Name.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+
+        query = _selectedParticipantSortOption switch
+        {
+            "BUDGET" => _participantSortDescending ? query.OrderByDescending(item => item.PersonalBudgetInEur) : query.OrderBy(item => item.PersonalBudgetInEur),
+            "VERSATO" => _participantSortDescending ? query.OrderByDescending(item => item.TotalPaidInEur) : query.OrderBy(item => item.TotalPaidInEur),
+            "RESIDUO" => _participantSortDescending ? query.OrderByDescending(item => item.RemainingBudgetInEur) : query.OrderBy(item => item.RemainingBudgetInEur),
+            _ => _participantSortDescending ? query.OrderByDescending(item => item.Name) : query.OrderBy(item => item.Name)
+        };
+
+        ParticipantSummaries.Clear();
+        foreach (var item in query)
+        {
+            ParticipantSummaries.Add(item);
+        }
     }
 }

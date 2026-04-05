@@ -1,97 +1,71 @@
-# CassaComuneAnM – Features 🏖️💰
+# CassaComuneAnM 2.0 - Features
 
-Welcome to the ultimate guide for **CassaComuneAnM 1.0.0** – the console app that keeps your common fund in check.  
+## 1. Gestione viaggi
 
----
+- creazione viaggio con nome, codice, data, coordinatore, cassiere, paese, valuta e cambio
+- modifica dei dati anagrafici del viaggio
+- eliminazione viaggio con conferma
+- overview rapida con budget totale, versato, spese e saldo cassa
 
-## 1. Trips Management
+## 2. Gestione valuta
 
-- **Create Trip**  
-  Set up a new trip with:
-  - Name & code
-  - Date
-  - Coordinator & cashier
-  - Country & currency (with exchange rate)
-  - Participant list with personal budgets  
+- selezione valuta tramite currency code
+- supporto a cambio rispetto a EUR
+- inserimento di spese e versamenti sia in EUR sia nella valuta del viaggio
+- conversione automatica
+- visualizzazione del corrispettivo in EUR quando il viaggio usa una valuta diversa da EUR
 
-- **Retrieve Trip**  
-  Pick a trip to manage from all saved trips.  
+## 3. Partecipanti
 
-- **Delete Trip**  
-  One wrong click and poof! Don’t worry – confirmation is required before deletion.  
+- aggiunta partecipanti
+- budget personale opzionale con fallback al budget standard del viaggio
+- rimozione partecipanti
+- situazione cassa per partecipante con budget, versato e residuo
+- filtri e ordinamenti nella lista partecipanti
 
----
+## 4. Versamenti
 
-## 2. Participants
+- registrazione versamenti
+- modifica ed eliminazione versamenti
+- validazione sul residuo disponibile
+- possibilità di aumento budget con conferma esplicita
+- dettaglio singolo versamento da lista compatta
+- filtri e ordinamenti nella lista versamenti
 
-- **Add Participant**  
-  Add a new traveler with their personal budget.  
+## 5. Spese
 
-- **Remove Participant**  
-  Remove a traveler, budget and deposits get recalculated.  
+- registrazione spese
+- modifica ed eliminazione spese
+- esclusione partecipanti dalla spesa
+- logica `Tour Leader Free`
+- gestione dei beneficiari
+- dettaglio singola spesa da lista compatta
+- filtri e ordinamenti nella lista spese
 
-- **View Details**  
-  See each participant’s personal budget, total deposits, and remaining balance.  
+## 6. Cassa e warning
 
----
+- saldo cassa aggiornato automaticamente
+- supporto a saldo negativo
+- evidenziazione del disavanzo
+- messaggi di warning quando una spesa porta la cassa sotto zero
 
-## 3. Expenses
+## 7. UX/UI 2.0
 
-- **Add Expense**  
-  Record any group expense with:
-  - Date
-  - Description
-  - Total amount
-  - Tour Leader Free flag  
+- interfaccia MAUI responsive per phone e tablet
+- stile custom coerente con palette bianco/verde/nero
+- dialog custom per selezioni e dettagli
+- date picker custom a mini calendario
+- card compatte in lista e dettaglio separato
 
-- **Custom Splitting**  
-  - Expenses can be split among all participants or exclude some.  
-  - App calculates pro-rata refunds for non-participants automatically.  
-  - Tour Leader Free logic: coordinator doesn’t pay, but the cost is redistributed among paying participants.  
+## 8. Qualità
 
-- **Show Expenses**  
-  View all recorded expenses with date, description, amount, and beneficiaries.  
+- test automatici sui casi limite del service layer
+- pipeline CI/CD su `master`
+- semantic versioning automatico da conventional commits
+- GitHub Release con changelog automatico e APK allegato
 
----
+## 9. Limiti noti
 
-## 4. Deposits (aka “Money in the pot”)
-
-- **Add Deposit**  
-  Track how much each participant deposits into the common fund.  
-  - Supports partial or full deposits.  
-  - Validates deposit against personal budget.  
-  - Offers to increase trip budget if someone wants to deposit more than their original budget.  
-
-- **Show Deposits**  
-  See all deposits with date, payer, and amount.  
-
-- **Cash Summary**  
-  - Participant-level: budget, deposited, and remaining amount.  
-  - Trip-level: total budget, total deposited, total expenses, and cash balance.  
-
----
-
-## 5. Console UX
-
-- Auto-refreshing console: no endless scrolling!  
-- Clear menus for trips, participants, expenses, and deposits.  
-- Confirmations for deletions and critical actions.  
-
----
-
-## 6. Business Logic Highlights
-
-- **Tour Leader Free**: coordinator can attend for free, cost is redistributed.  
-- **Automatic refunds**: non-participating participants get reimbursed correctly.  
-- **Flexible budget**: budgets can be increased on the fly.  
-
----
-
-## 7. Future Features
-
-- Web app version for easier UI  
-- Mobile app (Android) for on-the-go fund management  
-
----
-
-> 💡 Tip: This app is serious about your money… but you can still have fun 😎
+- warning sicurezza ancora aperto su `AutoMapper 15.0.1`
+- la build Android in CI dipende dai workload MAUI installati dall'action
+- il publish attuale produce APK; eventuale firma di produzione può essere aggiunta in un passo successivo

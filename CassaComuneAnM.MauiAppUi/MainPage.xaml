@@ -15,7 +15,7 @@
             <Label
                 Style="{StaticResource MutedLabel}"
                 FontSize="16"
-                Text="Frontend MAUI per la gestione di viaggi, partecipanti, spese e versamenti." />
+                Text="Applicazione per la gestione della cassa comune." />
 
             <Frame BackgroundColor="{StaticResource SurfaceAlt}" BorderColor="{StaticResource BorderStrong}" CornerRadius="18" Padding="20">
                 <VerticalStackLayout Spacing="12">

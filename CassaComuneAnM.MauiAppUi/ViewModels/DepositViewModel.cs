@@ -12,6 +12,7 @@ public class DepositViewModel : BaseViewModel
 {
     private readonly ITripService _tripService;
     private readonly string _tripCode;
+    private readonly List<DepositHistoryItemViewModel> _allDeposits = new();
     private Trip? _trip;
     private Participant? _selectedParticipant;
     private CurrencyCode _selectedInputCurrency = CurrencyCode.EUR;
@@ -21,9 +22,13 @@ public class DepositViewModel : BaseViewModel
     private string _submitButtonText = "Registra versamento";
     private bool _isEditing;
     private string _budgetPreviewText = "Seleziona un partecipante per vedere il residuo disponibile.";
+    private string _searchText = string.Empty;
+    private string _selectedSortOption = "DATA";
+    private bool _sortDescending = true;
 
     public ObservableCollection<Participant> Participants { get; } = new();
     public ObservableCollection<DepositHistoryItemViewModel> Deposits { get; } = new();
+    public IReadOnlyList<string> SortOptions { get; } = new[] { "DATA", "PAGANTE", "IMPORTO", "RESIDUO" };
 
     public Participant? SelectedParticipant
     {
@@ -70,6 +75,18 @@ public class DepositViewModel : BaseViewModel
         }
     }
 
+    public string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (SetProperty(ref _searchText, value))
+            {
+                ApplyDepositFilters();
+            }
+        }
+    }
+
     public DateTime DepositDate
     {
         get => _depositDate;
@@ -99,6 +116,9 @@ public class DepositViewModel : BaseViewModel
         get => _isEditing;
         set => SetProperty(ref _isEditing, value);
     }
+
+    public string SelectedSortOption => _selectedSortOption;
+    public string SortDirectionLabel => _sortDescending ? "DESC" : "ASC";
 
     public string SelectedParticipantLabel => SelectedParticipant?.Name?.ToUpperInvariant() ?? "SELEZIONA IL PARTECIPANTE CHE VERSA";
 
@@ -134,6 +154,9 @@ public class DepositViewModel : BaseViewModel
     public ICommand SelectParticipantCommand { get; }
     public ICommand SelectInputCurrencyCommand { get; }
     public ICommand SelectDepositDateCommand { get; }
+    public ICommand SelectSortCommand { get; }
+    public ICommand ToggleSortDirectionCommand { get; }
+    public ICommand ShowDepositDetailCommand { get; }
 
     public DepositViewModel(ITripService tripService, string tripCode)
     {
@@ -147,6 +170,9 @@ public class DepositViewModel : BaseViewModel
         SelectParticipantCommand = new Command(async () => await SelectParticipantAsync());
         SelectInputCurrencyCommand = new Command(async () => await SelectInputCurrencyAsync());
         SelectDepositDateCommand = new Command(async () => await SelectDepositDateAsync());
+        SelectSortCommand = new Command(async () => await SelectSortAsync());
+        ToggleSortDirectionCommand = new Command(ToggleSortDirection);
+        ShowDepositDetailCommand = new Command<DepositHistoryItemViewModel>(async deposit => await ShowDepositDetailAsync(deposit));
     }
 
     public async Task LoadAsync()
@@ -156,6 +182,7 @@ public class DepositViewModel : BaseViewModel
 
         Participants.Clear();
         Deposits.Clear();
+        _allDeposits.Clear();
 
         if (_trip is null)
         {
@@ -173,7 +200,7 @@ public class DepositViewModel : BaseViewModel
             SelectedInputCurrency = CurrencyCode.EUR;
         }
 
-        foreach (var deposit in deposits.OrderByDescending(d => d.Date).ThenByDescending(d => d.Id))
+        foreach (var deposit in deposits)
         {
             var participant = Participants.FirstOrDefault(p => p.Name == deposit.PayerName);
             var totalPaid = deposits
@@ -183,7 +210,7 @@ public class DepositViewModel : BaseViewModel
 
             var remainingInEur = participant is null ? 0m : participant.PersonalBudget - totalPaid;
 
-            Deposits.Add(new DepositHistoryItemViewModel
+            _allDeposits.Add(new DepositHistoryItemViewModel
             {
                 Id = deposit.Id,
                 Date = deposit.Date,
@@ -197,6 +224,7 @@ public class DepositViewModel : BaseViewModel
             });
         }
 
+        ApplyDepositFilters();
         OnPropertyChanged(nameof(DepositCoverageText));
         OnPropertyChanged(nameof(DepositCoverageProgress));
         UpdateBudgetPreview();
@@ -328,6 +356,35 @@ public class DepositViewModel : BaseViewModel
         });
     }
 
+    private async Task ShowDepositDetailAsync(DepositHistoryItemViewModel? deposit)
+    {
+        if (deposit is null)
+        {
+            return;
+        }
+
+        var action = await ShowDetailActionsAsync(
+            $"Versamento {deposit.PayerName}",
+            new[]
+            {
+                new DialogDetailRow("Data", deposit.Date.ToString("dd/MM/yyyy")),
+                new DialogDetailRow("Importo", deposit.AmountPrimaryDisplay, deposit.AmountSecondaryDisplay),
+                new DialogDetailRow("Residuo", deposit.RemainingBudgetPrimaryDisplay, deposit.RemainingBudgetSecondaryDisplay)
+            },
+            new[] { "MODIFICA", "ELIMINA" });
+
+        if (action == "MODIFICA")
+        {
+            StartEditDeposit(deposit);
+            return;
+        }
+
+        if (action == "ELIMINA")
+        {
+            await DeleteDepositAsync(deposit);
+        }
+    }
+
     private void StartEditDeposit(DepositHistoryItemViewModel? deposit)
     {
         if (deposit is null)
@@ -395,5 +452,54 @@ public class DepositViewModel : BaseViewModel
             : CurrencyDisplayService.ConvertEurToTripCurrency(amountInEur, _trip);
 
         AmountInput = FormatDecimalInput(converted, "0.00##");
+    }
+
+    private async Task SelectSortAsync()
+    {
+        var selected = await ShowSelectionAsync(
+            "Ordina versamenti",
+            "Scegli come ordinare lo storico versamenti.",
+            SortOptions,
+            option => option,
+            _selectedSortOption);
+
+        if (!string.IsNullOrWhiteSpace(selected))
+        {
+            _selectedSortOption = selected;
+            OnPropertyChanged(nameof(SelectedSortOption));
+            ApplyDepositFilters();
+        }
+    }
+
+    private void ToggleSortDirection()
+    {
+        _sortDescending = !_sortDescending;
+        OnPropertyChanged(nameof(SortDirectionLabel));
+        ApplyDepositFilters();
+    }
+
+    private void ApplyDepositFilters()
+    {
+        IEnumerable<DepositHistoryItemViewModel> query = _allDeposits;
+
+        if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            var term = SearchText.Trim();
+            query = query.Where(deposit => deposit.PayerName.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+
+        query = _selectedSortOption switch
+        {
+            "PAGANTE" => _sortDescending ? query.OrderByDescending(deposit => deposit.PayerName) : query.OrderBy(deposit => deposit.PayerName),
+            "IMPORTO" => _sortDescending ? query.OrderByDescending(deposit => deposit.AmountInEur) : query.OrderBy(deposit => deposit.AmountInEur),
+            "RESIDUO" => _sortDescending ? query.OrderByDescending(deposit => deposit.RemainingBudgetInEur) : query.OrderBy(deposit => deposit.RemainingBudgetInEur),
+            _ => _sortDescending ? query.OrderByDescending(deposit => deposit.Date).ThenByDescending(deposit => deposit.Id) : query.OrderBy(deposit => deposit.Date).ThenBy(deposit => deposit.Id)
+        };
+
+        Deposits.Clear();
+        foreach (var deposit in query)
+        {
+            Deposits.Add(deposit);
+        }
     }
 }

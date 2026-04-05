@@ -12,6 +12,7 @@ public class ExpenseViewModel : BaseViewModel
 {
     private readonly ITripService _tripService;
     private readonly string _tripCode;
+    private readonly List<ExpenseHistoryItemViewModel> _allExpenses = new();
     private Trip? _trip;
     private string _helperText = "Seleziona chi non beneficia della spesa. Se non selezioni nessuno, la spesa viene ripartita su tutto il gruppo.";
     private string _description = string.Empty;
@@ -22,9 +23,13 @@ public class ExpenseViewModel : BaseViewModel
     private int? _editingExpenseId;
     private string _submitButtonText = "Registra spesa";
     private bool _isEditing;
+    private string _searchText = string.Empty;
+    private string _selectedSortOption = "DATA";
+    private bool _sortDescending = true;
 
     public ObservableCollection<SelectableParticipantViewModel> Participants { get; } = new();
     public ObservableCollection<ExpenseHistoryItemViewModel> Expenses { get; } = new();
+    public IReadOnlyList<string> SortOptions { get; } = new[] { "DATA", "DESCRIZIONE", "IMPORTO" };
 
     public string Description
     {
@@ -66,6 +71,18 @@ public class ExpenseViewModel : BaseViewModel
             if (SetProperty(ref _amountInput, value))
             {
                 UpdateHelperText();
+            }
+        }
+    }
+
+    public string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (SetProperty(ref _searchText, value))
+            {
+                ApplyExpenseFilters();
             }
         }
     }
@@ -112,6 +129,9 @@ public class ExpenseViewModel : BaseViewModel
         set => SetProperty(ref _isEditing, value);
     }
 
+    public string SelectedSortOption => _selectedSortOption;
+    public string SortDirectionLabel => _sortDescending ? "DESC" : "ASC";
+
     public string SelectedInputCurrencyLabel =>
         _trip is null
             ? "INSERIMENTO IN EUR"
@@ -143,6 +163,9 @@ public class ExpenseViewModel : BaseViewModel
     public ICommand CancelEditCommand { get; }
     public ICommand SelectInputCurrencyCommand { get; }
     public ICommand SelectExpenseDateCommand { get; }
+    public ICommand SelectSortCommand { get; }
+    public ICommand ToggleSortDirectionCommand { get; }
+    public ICommand ShowExpenseDetailCommand { get; }
 
     public ExpenseViewModel(ITripService tripService, string tripCode)
     {
@@ -155,6 +178,9 @@ public class ExpenseViewModel : BaseViewModel
         CancelEditCommand = new Command(CancelEdit);
         SelectInputCurrencyCommand = new Command(async () => await SelectInputCurrencyAsync());
         SelectExpenseDateCommand = new Command(async () => await SelectExpenseDateAsync());
+        SelectSortCommand = new Command(async () => await SelectSortAsync());
+        ToggleSortDirectionCommand = new Command(ToggleSortDirection);
+        ShowExpenseDetailCommand = new Command<ExpenseHistoryItemViewModel>(async expense => await ShowExpenseDetailAsync(expense));
     }
 
     public async Task LoadAsync()
@@ -164,6 +190,7 @@ public class ExpenseViewModel : BaseViewModel
 
         Participants.Clear();
         Expenses.Clear();
+        _allExpenses.Clear();
 
         if (_trip is null)
         {
@@ -183,7 +210,7 @@ public class ExpenseViewModel : BaseViewModel
             Participants.Add(selectable);
         }
 
-        foreach (var expense in expenses.OrderByDescending(e => e.Date).ThenByDescending(e => e.Id))
+        foreach (var expense in expenses)
         {
             var beneficiaries = expense.ExpenseParticipants
                 .Select(ep => ep.Participant?.Name)
@@ -193,7 +220,7 @@ public class ExpenseViewModel : BaseViewModel
                 .OrderBy(name => name)
                 .ToList();
 
-            Expenses.Add(new ExpenseHistoryItemViewModel
+            _allExpenses.Add(new ExpenseHistoryItemViewModel
             {
                 Id = expense.Id,
                 Date = expense.Date,
@@ -205,6 +232,7 @@ public class ExpenseViewModel : BaseViewModel
             });
         }
 
+        ApplyExpenseFilters();
         OnPropertyChanged(nameof(ExpenseCoverageText));
         OnPropertyChanged(nameof(ExpenseCoverageProgress));
         UpdateHelperText();
@@ -305,6 +333,35 @@ public class ExpenseViewModel : BaseViewModel
         });
     }
 
+    private async Task ShowExpenseDetailAsync(ExpenseHistoryItemViewModel? expense)
+    {
+        if (expense is null)
+        {
+            return;
+        }
+
+        var action = await ShowDetailActionsAsync(
+            expense.Description,
+            new[]
+            {
+                new DialogDetailRow("Data", expense.Date.ToString("dd/MM/yyyy")),
+                new DialogDetailRow("Importo", expense.AmountPrimaryDisplay, expense.AmountSecondaryDisplay),
+                new DialogDetailRow("Beneficiari", expense.BeneficiariesText)
+            },
+            new[] { "MODIFICA", "ELIMINA" });
+
+        if (action == "MODIFICA")
+        {
+            StartEditExpense(expense);
+            return;
+        }
+
+        if (action == "ELIMINA")
+        {
+            await DeleteExpenseAsync(expense);
+        }
+    }
+
     private void StartEditExpense(ExpenseHistoryItemViewModel? expense)
     {
         if (expense is null)
@@ -395,5 +452,55 @@ public class ExpenseViewModel : BaseViewModel
             : CurrencyDisplayService.ConvertEurToTripCurrency(amountInEur, _trip);
 
         AmountInput = FormatDecimalInput(converted, "0.00##");
+    }
+
+    private async Task SelectSortAsync()
+    {
+        var selected = await ShowSelectionAsync(
+            "Ordina spese",
+            "Scegli come ordinare lo storico spese.",
+            SortOptions,
+            option => option,
+            _selectedSortOption);
+
+        if (!string.IsNullOrWhiteSpace(selected))
+        {
+            _selectedSortOption = selected;
+            OnPropertyChanged(nameof(SelectedSortOption));
+            ApplyExpenseFilters();
+        }
+    }
+
+    private void ToggleSortDirection()
+    {
+        _sortDescending = !_sortDescending;
+        OnPropertyChanged(nameof(SortDirectionLabel));
+        ApplyExpenseFilters();
+    }
+
+    private void ApplyExpenseFilters()
+    {
+        IEnumerable<ExpenseHistoryItemViewModel> query = _allExpenses;
+
+        if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            var term = SearchText.Trim();
+            query = query.Where(expense =>
+                expense.Description.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                expense.BeneficiariesText.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+
+        query = _selectedSortOption switch
+        {
+            "DESCRIZIONE" => _sortDescending ? query.OrderByDescending(expense => expense.Description) : query.OrderBy(expense => expense.Description),
+            "IMPORTO" => _sortDescending ? query.OrderByDescending(expense => expense.AmountInEur) : query.OrderBy(expense => expense.AmountInEur),
+            _ => _sortDescending ? query.OrderByDescending(expense => expense.Date).ThenByDescending(expense => expense.Id) : query.OrderBy(expense => expense.Date).ThenBy(expense => expense.Id)
+        };
+
+        Expenses.Clear();
+        foreach (var expense in query)
+        {
+            Expenses.Add(expense);
+        }
     }
 }

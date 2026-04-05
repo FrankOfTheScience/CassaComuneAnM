@@ -10,11 +10,16 @@ public class ParticipantViewModel : BaseViewModel
 {
     private readonly ITripService _tripService;
     private readonly string _tripCode;
+    private readonly List<ParticipantListItemViewModel> _allParticipants = new();
     private Trip? _trip;
     private string _participantName = string.Empty;
     private string _personalBudgetInput = string.Empty;
+    private string _searchText = string.Empty;
+    private string _selectedSortOption = "NOME";
+    private bool _sortDescending;
 
     public ObservableCollection<ParticipantListItemViewModel> Participants { get; } = new();
+    public IReadOnlyList<string> SortOptions { get; } = new[] { "NOME", "BUDGET" };
 
     public string ParticipantName
     {
@@ -28,16 +33,34 @@ public class ParticipantViewModel : BaseViewModel
         set => SetProperty(ref _personalBudgetInput, value);
     }
 
+    public string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (SetProperty(ref _searchText, value))
+            {
+                ApplyFilters();
+            }
+        }
+    }
+
+    public string SelectedSortOption => _selectedSortOption;
+    public string SortDirectionLabel => _sortDescending ? "DESC" : "ASC";
+
     public string PersonalBudgetPlaceholder =>
         "Budget personale in EUR";
 
     public string PersonalBudgetHelpText =>
         _trip?.BudgetPerPax > 0
-            ? $"Vuoto = usa il budget base viaggio ({_trip.BudgetPerPax:F2} EUR)."
-            : "Inserisci il budget personale del partecipante.";
+            ? $"Inserisci il budget personale del partecipante. Se lasci vuoto, usa il budget base viaggio ({_trip.BudgetPerPax:F2} EUR)."
+            : "Inserisci il budget personale del partecipante. Se lasci vuoto, si applica il budget standard del viaggio.";
 
     public ICommand AddParticipantCommand { get; }
     public ICommand RemoveParticipantCommand { get; }
+    public ICommand SelectSortCommand { get; }
+    public ICommand ToggleSortDirectionCommand { get; }
+    public ICommand ShowParticipantDetailCommand { get; }
 
     public ParticipantViewModel(ITripService tripService, string tripCode)
     {
@@ -47,6 +70,9 @@ public class ParticipantViewModel : BaseViewModel
 
         AddParticipantCommand = new Command(async () => await AddParticipantAsync());
         RemoveParticipantCommand = new Command<ParticipantListItemViewModel>(async participant => await RemoveParticipantAsync(participant));
+        SelectSortCommand = new Command(async () => await SelectSortAsync());
+        ToggleSortDirectionCommand = new Command(ToggleSortDirection);
+        ShowParticipantDetailCommand = new Command<ParticipantListItemViewModel>(async participant => await ShowParticipantDetailAsync(participant));
     }
 
     public async Task LoadAsync()
@@ -60,16 +86,20 @@ public class ParticipantViewModel : BaseViewModel
             return;
         }
 
+        _allParticipants.Clear();
         foreach (var participant in _trip.Participants.OrderBy(p => p.Name))
         {
-            Participants.Add(new ParticipantListItemViewModel
+            _allParticipants.Add(new ParticipantListItemViewModel
             {
                 Name = participant.Name,
                 ParticipantName = participant.Name,
+                BudgetInEur = participant.PersonalBudget,
                 BudgetPrimaryDisplay = CurrencyDisplayService.FormatPrimaryAmount(participant.PersonalBudget, _trip),
                 BudgetSecondaryDisplay = CurrencyDisplayService.FormatSecondaryEurAmount(participant.PersonalBudget, _trip)
             });
         }
+
+        ApplyFilters();
     }
 
     private async Task AddParticipantAsync()
@@ -137,5 +167,73 @@ public class ParticipantViewModel : BaseViewModel
             await _tripService.RemoveParticipantAsync(_tripCode, participant.ParticipantName);
             await LoadAsync();
         });
+    }
+
+    private async Task ShowParticipantDetailAsync(ParticipantListItemViewModel? participant)
+    {
+        if (participant is null)
+        {
+            return;
+        }
+
+        var action = await ShowDetailActionsAsync(
+            participant.Name,
+            new[]
+            {
+                new DialogDetailRow("Budget", participant.BudgetPrimaryDisplay, participant.BudgetSecondaryDisplay)
+            },
+            new[] { "RIMUOVI" });
+
+        if (action == "RIMUOVI")
+        {
+            await RemoveParticipantAsync(participant);
+        }
+    }
+
+    private async Task SelectSortAsync()
+    {
+        var selected = await ShowSelectionAsync(
+            "Ordina partecipanti",
+            "Scegli come ordinare la lista partecipanti.",
+            SortOptions,
+            option => option,
+            _selectedSortOption);
+
+        if (!string.IsNullOrWhiteSpace(selected))
+        {
+            _selectedSortOption = selected;
+            OnPropertyChanged(nameof(SelectedSortOption));
+            ApplyFilters();
+        }
+    }
+
+    private void ToggleSortDirection()
+    {
+        _sortDescending = !_sortDescending;
+        OnPropertyChanged(nameof(SortDirectionLabel));
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        IEnumerable<ParticipantListItemViewModel> query = _allParticipants;
+
+        if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            var term = SearchText.Trim();
+            query = query.Where(participant => participant.Name.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+
+        query = _selectedSortOption switch
+        {
+            "BUDGET" => _sortDescending ? query.OrderByDescending(participant => participant.BudgetInEur) : query.OrderBy(participant => participant.BudgetInEur),
+            _ => _sortDescending ? query.OrderByDescending(participant => participant.Name) : query.OrderBy(participant => participant.Name)
+        };
+
+        Participants.Clear();
+        foreach (var participant in query)
+        {
+            Participants.Add(participant);
+        }
     }
 }

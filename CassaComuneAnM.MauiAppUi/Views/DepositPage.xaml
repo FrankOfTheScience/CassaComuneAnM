@@ -70,52 +70,38 @@
 
             <Label Style="{StaticResource SectionLabel}" Text="STORICO VERSAMENTI" />
             <Label Style="{StaticResource MutedLabel}" Text="Vista storica a card per consultazione rapida di pagante, importo e residuo." />
-            <CollectionView EmptyView="Nessun versamento." ItemsSource="{Binding Deposits}">
-                <CollectionView.ItemTemplate>
+            <Entry Placeholder="Filtra per pagante" Text="{Binding SearchText}" />
+            <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center" JustifyContent="Start">
+                <Button Command="{Binding SelectSortCommand}" Margin="0,0,8,8" Style="{StaticResource ChipButton}" Text="{Binding SelectedSortOption}" />
+                <Button Command="{Binding ToggleSortDirectionCommand}" Margin="0,0,0,8" Style="{StaticResource ChipGhostButton}" Text="{Binding SortDirectionLabel}" />
+            </FlexLayout>
+            <VerticalStackLayout Margin="4,6,4,10" Spacing="12" BindableLayout.ItemsSource="{Binding Deposits}">
+                <BindableLayout.ItemTemplate>
                     <DataTemplate>
-                        <Frame Style="{StaticResource ListCardFrame}">
+                        <Frame Style="{StaticResource ListCardFrame}" Margin="4,2,4,8">
                             <VerticalStackLayout Spacing="6">
-                                <Label Style="{StaticResource CardTitleLabel}" FontSize="15" Text="{Binding PayerName, Converter={StaticResource UppercaseConverter}}" />
-                                <Label Text="{Binding Date, StringFormat='Data: {0:dd/MM/yyyy}'}" />
-                                <HorizontalStackLayout Spacing="0" FlexLayout.Wrap="Wrap">
-                                    <Label>
-                                        <Label.FormattedText>
-                                            <FormattedString>
-                                                <Span Text="Importo: " FontAttributes="Bold" />
-                                                <Span Text="{Binding AmountPrimaryDisplay}" />
-                                            </FormattedString>
-                                        </Label.FormattedText>
-                                    </Label>
-                                    <Label Style="{StaticResource SecondaryValueLabel}" Text="{Binding AmountSecondaryDisplay}" />
-                                </HorizontalStackLayout>
-                                <HorizontalStackLayout Spacing="0" FlexLayout.Wrap="Wrap">
-                                    <Label>
-                                        <Label.FormattedText>
-                                            <FormattedString>
-                                                <Span Text="Residuo: " FontAttributes="Bold" />
-                                                <Span Text="{Binding RemainingBudgetPrimaryDisplay}" />
-                                            </FormattedString>
-                                        </Label.FormattedText>
-                                    </Label>
-                                    <Label Style="{StaticResource SecondaryValueLabel}" Text="{Binding RemainingBudgetSecondaryDisplay}" />
-                                </HorizontalStackLayout>
+                                <Label Style="{StaticResource CardTitleLabel}" FontSize="15" LineBreakMode="WordWrap" Text="{Binding PayerName}" />
+                                <Label Style="{StaticResource MutedLabel}" Text="{Binding Date, StringFormat='Data {0:dd/MM/yyyy}'}" />
+                                <Label>
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="Importo: " FontAttributes="Bold" />
+                                            <Span Text="{Binding AmountPrimaryDisplay}" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
                                 <Button
-                                    Command="{Binding Source={x:Reference DepositRoot}, Path=BindingContext.StartEditDepositCommand}"
+                                    Command="{Binding Source={x:Reference DepositRoot}, Path=BindingContext.ShowDepositDetailCommand}"
                                     CommandParameter="{Binding .}"
+                                    HorizontalOptions="Start"
                                     IsEnabled="{Binding Source={x:Reference DepositRoot}, Path=BindingContext.IsNotBusy}"
-                                    Style="{StaticResource SecondaryButton}"
-                                    Text="MODIFICA VERSAMENTO" />
-                                <Button
-                                    Command="{Binding Source={x:Reference DepositRoot}, Path=BindingContext.DeleteDepositCommand}"
-                                    CommandParameter="{Binding .}"
-                                    IsEnabled="{Binding Source={x:Reference DepositRoot}, Path=BindingContext.IsNotBusy}"
-                                    Style="{StaticResource TertiaryButton}"
-                                    Text="ELIMINA VERSAMENTO" />
+                                    Style="{StaticResource ChipButton}"
+                                    Text="DETTAGLIO" />
                             </VerticalStackLayout>
                         </Frame>
                     </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

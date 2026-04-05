@@ -1,43 +1,67 @@
-# CassaComuneAnM 🏖️💰
+# CassaComuneAnM 2.0
 
-Managing a common fund for a trip has never been this… organized. Apparently, no app existed for it, so I built one.  
+Frontend MAUI per la gestione della cassa comune di viaggio.
 
-**CassaComuneAnM 1.0.0** is a console app to track trip participants, deposits, expenses, and even custom rules like “Tour Leader free” or per-person reimbursements.  
+`CassaComuneAnM 2.0` sostituisce l'impostazione console-first della 1.x con un'app mobile/desktop orientata ai flussi operativi reali: viaggi, partecipanti, versamenti, spese, situazione cassa, doppia valuta e riepiloghi rapidi.
 
----
+## Cosa fa
 
-## Quick Features
+- crea e modifica viaggi con coordinatore, cassiere, paese, valuta e cambio
+- gestisce partecipanti con budget standard o personalizzato
+- registra versamenti in EUR o nella valuta del viaggio, con conversione automatica
+- registra spese in EUR o nella valuta del viaggio, con esclusioni, ripartizione e logica `Tour Leader Free`
+- mostra situazione cassa per partecipante e a livello viaggio
+- evidenzia saldo cassa negativo e disavanzi
+- include filtri, ordinamenti e viste compatte con dettaglio dedicato
 
-- Create and manage trips with participants and personal budgets.  
-- Record expenses and split them correctly among participants.  
-- Track deposits with automatic balance calculation.  
-- Special business logic for Tour Leaders and refunds.  
-- Delete trips safely with confirmation.  
-- Auto-refreshing console UI (no endless scrolling).  
+## Stack
 
----
+- `.NET 8`
+- `.NET MAUI`
+- `Entity Framework Core`
+- `SQLite`
+- `xUnit`
 
-## Future Plans
+## Struttura repository
 
-- Next major: Web app  
-- Later: Android app (maybe skip straight to mobile)  
+- [CassaComuneAnM.Core](C:/Users/fdell/source/repos/CassaComuneAnM/CassaComuneAnM.Core): entità e enum
+- [CassaComuneAnm.Application](C:/Users/fdell/source/repos/CassaComuneAnM/CassaComuneAnm.Application): servizi applicativi e regole business
+- [CassaComuneAnM.Infrastructure](C:/Users/fdell/source/repos/CassaComuneAnM/CassaComuneAnM.Infrastructure): EF Core, SQLite, repository
+- [CassaComuneAnM.MauiAppUi](C:/Users/fdell/source/repos/CassaComuneAnM/CassaComuneAnM.MauiAppUi): frontend MAUI 2.0
+- [CassaComuneAnM.Tests](C:/Users/fdell/source/repos/CassaComuneAnM/CassaComuneAnM.Tests): test automatici
 
----
+## Avvio locale
 
-For a full breakdown of all features and how to use them, check out [FEATURES.md](./FEATURES.md).  
+Prerequisiti:
 
----
+- `SDK .NET 8`
+- workload MAUI per la piattaforma che vuoi eseguire
+- Visual Studio 2022 oppure CLI `dotnet`
 
-Tech: .NET 8 Console App + Spectre.Console + JSON storage  
+Comandi utili:
 
-💡 Pro tip: Don’t mess with the Tour Leader logic… it knows if you’re cheating 😉
+```powershell
+dotnet build CassaComuneAnM.sln
+dotnet test CassaComuneAnM.Tests\CassaComuneAnM.Tests.csproj
+dotnet build CassaComuneAnM.MauiAppUi\CassaComuneAnM.MauiAppUi.csproj
+```
 
-## 📦 Download & Run
+## Release 2.0
 
-1. Go to the [GitHub Releases page](https://github.com/FrankOfTheScience/CassaComuneAnM/releases).  
-2. Download `CassaComuneAnM_v1.0.0.zip`.  
-3. Extract it anywhere on your PC.  
-4. Double click on the file `CassaComuneAnM.exe`
+La pipeline GitHub su `master` esegue:
 
-That’s it! The app will guide you through creating trips, adding participants, and recording deposits/expenses.
+- restore, build e test
+- calcolo versione automatico da conventional commits
+- creazione tag Git
+- publish APK Android
+- upload artifact
+- creazione GitHub Release con changelog automatico e allegato APK
 
+## Branching
+
+- `dev`: integrazione continua
+- `master`: release branch
+
+## Documentazione funzionale
+
+Per il dettaglio completo dei flussi supportati consulta [FEATURES.md](C:/Users/fdell/source/repos/CassaComuneAnM/FEATURES.md).

@@ -96,6 +96,16 @@ public abstract class BaseViewModel : INotifyPropertyChanged
         return DialogService.ShowDatePickerAsync(title, message, selectedDate);
     }
 
+    protected Task<string?> ShowDetailActionsAsync(string title, IReadOnlyList<DialogDetailRow> rows, IReadOnlyList<string> actions)
+    {
+        if (DialogService is null)
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        return DialogService.ShowDetailActionsAsync(title, rows, actions);
+    }
+
     protected async Task RunBusyAsync(Func<Task> action, string errorTitle = "Errore")
     {
         if (IsBusy)

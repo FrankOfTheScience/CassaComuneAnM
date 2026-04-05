@@ -5,7 +5,8 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Partecipanti">
-    <Grid Padding="{OnIdiom Phone='16', Tablet='24'}" RowDefinitions="Auto,*" RowSpacing="20" MaximumWidthRequest="760" HorizontalOptions="Center">
+    <ScrollView>
+    <VerticalStackLayout Padding="{OnIdiom Phone='18', Tablet='28'}" Spacing="18" MaximumWidthRequest="760" HorizontalOptions="Center">
         <Frame Padding="16">
             <VerticalStackLayout Spacing="10">
                 <Entry Placeholder="Nome partecipante" Text="{Binding ParticipantName}" />
@@ -15,33 +16,41 @@
             </VerticalStackLayout>
         </Frame>
 
-        <CollectionView Grid.Row="1" EmptyView="Nessun partecipante." ItemsSource="{Binding Participants}">
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <Frame Margin="0,0,0,12" Padding="14">
-                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-                            <Label FontAttributes="Bold" Text="{Binding Name}" />
-                            <Button
-                                Grid.Column="1"
-                                Command="{Binding Source={x:Reference ParticipantRoot}, Path=BindingContext.RemoveParticipantCommand}"
-                                CommandParameter="{Binding .}"
-                                Style="{StaticResource TertiaryButton}"
-                                Text="Rimuovi" />
-                            <HorizontalStackLayout Grid.Row="1" Spacing="0" FlexLayout.Wrap="Wrap">
-                                <Label>
-                                    <Label.FormattedText>
-                                        <FormattedString>
-                                            <Span Text="Budget: " FontAttributes="Bold" />
-                                            <Span Text="{Binding BudgetPrimaryDisplay}" />
-                                        </FormattedString>
-                                    </Label.FormattedText>
-                                </Label>
-                                <Label Style="{StaticResource SecondaryValueLabel}" Text="{Binding BudgetSecondaryDisplay}" />
-                            </HorizontalStackLayout>
-                        </Grid>
-                    </Frame>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
-    </Grid>
+        <VerticalStackLayout Spacing="12">
+            <Entry Placeholder="Filtra partecipanti per nome" Text="{Binding SearchText}" />
+            <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center" JustifyContent="Start">
+                <Button Command="{Binding SelectSortCommand}" Margin="0,0,8,8" Style="{StaticResource ChipButton}" Text="{Binding SelectedSortOption}" />
+                <Button Command="{Binding ToggleSortDirectionCommand}" Margin="0,0,0,8" Style="{StaticResource ChipGhostButton}" Text="{Binding SortDirectionLabel}" />
+            </FlexLayout>
+            <VerticalStackLayout Margin="4,6,4,10" Spacing="10" BindableLayout.ItemsSource="{Binding Participants}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Style="{StaticResource ListCardFrame}" Margin="4,2,4,8" Padding="14">
+                            <VerticalStackLayout Spacing="6">
+                                <Label FontAttributes="Bold" LineBreakMode="WordWrap" Text="{Binding Name}" />
+                                <HorizontalStackLayout Spacing="0" FlexLayout.Wrap="Wrap">
+                                    <Label>
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="Budget: " FontAttributes="Bold" />
+                                                <Span Text="{Binding BudgetPrimaryDisplay}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                    <Label Style="{StaticResource SecondaryValueLabel}" Text="{Binding BudgetSecondaryDisplay}" />
+                                </HorizontalStackLayout>
+                                <Button
+                                    Command="{Binding Source={x:Reference ParticipantRoot}, Path=BindingContext.ShowParticipantDetailCommand}"
+                                    CommandParameter="{Binding .}"
+                                    HorizontalOptions="Start"
+                                    Style="{StaticResource ChipButton}"
+                                    Text="DETTAGLIO" />
+                            </VerticalStackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>

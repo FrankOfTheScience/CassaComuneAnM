@@ -16,7 +16,14 @@
                         <Button Command="{Binding DeleteTripCommand}" IsEnabled="{Binding IsNotBusy}" Style="{StaticResource TertiaryButton}" Text="ELIMINA VIAGGIO" />
                     </FlexLayout>
                     <Entry IsVisible="{Binding IsEditingTrip}" Placeholder="Nome viaggio" Text="{Binding Trip.TripName}" />
-                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.TripCode, StringFormat='Codice: {0}'}" />
+                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="Codice: " FontAttributes="Bold" />
+                                <Span Text="{Binding Trip.TripCode}" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
                     <Entry IsVisible="{Binding IsEditingTrip}" Placeholder="Codice viaggio" Text="{Binding Trip.TripCode}" />
                     <Border IsVisible="{Binding IsEditingTrip}" Style="{StaticResource FieldShell}">
                         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
@@ -26,18 +33,53 @@
                                 Grid.Column="1"
                                 Grid.RowSpan="2"
                                 Command="{Binding SelectTripDateCommand}"
-                                Style="{StaticResource SecondaryButton}"
+                                Style="{StaticResource ChipButton}"
                                 Text="DATA" />
                         </Grid>
                     </Border>
-                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding TripDateDisplay, StringFormat='Data: {0}'}" />
-                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.CoordinatorName, StringFormat='Coordinatore: {0}'}" />
+                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="Data: " FontAttributes="Bold" />
+                                <Span Text="{Binding TripDateDisplay}" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="Coordinatore: " FontAttributes="Bold" />
+                                <Span Text="{Binding Trip.CoordinatorName}" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
                     <Entry IsVisible="{Binding IsEditingTrip}" Placeholder="Coordinatore" Text="{Binding Trip.CoordinatorName}" />
-                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.CashierName, StringFormat='Cassiere: {0}'}" />
+                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="Cassiere: " FontAttributes="Bold" />
+                                <Span Text="{Binding Trip.CashierName}" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
                     <Entry IsVisible="{Binding IsEditingTrip}" Placeholder="Cassiere" Text="{Binding Trip.CashierName}" />
-                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.Country, StringFormat='Paese: {0}'}" />
+                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="Paese: " FontAttributes="Bold" />
+                                <Span Text="{Binding Trip.Country}" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
                     <Entry IsVisible="{Binding IsEditingTrip}" Placeholder="Paese" Text="{Binding Trip.Country}" />
-                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.Currency, StringFormat='Valuta: {0}'}" />
+                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="Valuta: " FontAttributes="Bold" />
+                                <Span Text="{Binding Trip.Currency}" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
                     <Border IsVisible="{Binding IsEditingTrip}" Style="{StaticResource FieldShell}">
                         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
                             <Label Style="{StaticResource FieldLabel}" Text="VALUTA LOCALE DEL VIAGGIO" />
@@ -46,11 +88,18 @@
                                 Grid.Column="1"
                                 Grid.RowSpan="2"
                                 Command="{Binding SelectCurrencyCommand}"
-                                Style="{StaticResource SecondaryButton}"
+                                Style="{StaticResource ChipButton}"
                                 Text="SCEGLI" />
                         </Grid>
                     </Border>
-                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding ExchangeRateDisplay, StringFormat='Cambio: {0}'}" />
+                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="Cambio: " FontAttributes="Bold" />
+                                <Span Text="{Binding ExchangeRateDisplay}" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
                     <Entry IsVisible="{Binding IsEditingTrip}" Keyboard="Numeric" Placeholder="{Binding ExchangeRatePlaceholder}" Text="{Binding ExchangeRateInput}" />
                     <Label IsVisible="{Binding IsEditingTrip}" Style="{StaticResource MutedLabel}" Text="{Binding ExchangeRateHelpText}" />
                     <FlexLayout IsVisible="{Binding IsEditingTrip}" Direction="Row" Wrap="Wrap" JustifyContent="Start" AlignItems="Center">
@@ -130,10 +179,15 @@
             </Frame>
 
             <Label Style="{StaticResource SectionLabel}" Text="SITUAZIONE CASSA" />
-            <CollectionView EmptyView="Nessun partecipante." ItemsSource="{Binding ParticipantSummaries}">
-                <CollectionView.ItemTemplate>
+            <Entry Placeholder="Filtra partecipanti per nome" Text="{Binding ParticipantSearchText}" />
+            <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center" JustifyContent="Start">
+                <Button Command="{Binding SelectParticipantSortCommand}" Margin="0,0,8,8" Style="{StaticResource ChipButton}" Text="{Binding SelectedParticipantSortOption}" />
+                <Button Command="{Binding ToggleParticipantSortDirectionCommand}" Margin="0,0,0,8" Style="{StaticResource ChipGhostButton}" Text="{Binding ParticipantSortDirectionLabel}" />
+            </FlexLayout>
+            <VerticalStackLayout Margin="4,6,4,10" Spacing="12" BindableLayout.ItemsSource="{Binding ParticipantSummaries}">
+                <BindableLayout.ItemTemplate>
                     <DataTemplate>
-                        <Frame Style="{StaticResource ListCardFrame}">
+                        <Frame Style="{StaticResource ListCardFrame}" Margin="4,2,4,8">
                             <VerticalStackLayout Spacing="4">
                                 <Label Style="{StaticResource CardTitleLabel}" FontSize="16" Text="{Binding Name, Converter={StaticResource UppercaseConverter}}" />
                                 <HorizontalStackLayout Spacing="0" FlexLayout.Wrap="Wrap">
@@ -172,8 +226,8 @@
                             </VerticalStackLayout>
                         </Frame>
                     </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
 
             <Button Command="{Binding ManageParticipantsCommand}" Margin="4,4,4,0" Text="GESTISCI PARTECIPANTI" />
             <Button Command="{Binding ManageExpensesCommand}" Margin="4,6,4,0" Text="GESTISCI SPESE" />

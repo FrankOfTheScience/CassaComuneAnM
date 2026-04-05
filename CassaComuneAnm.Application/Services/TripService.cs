@@ -272,9 +272,7 @@ public class TripService : ITripService
         participant.Deposits.Add(deposit);
         trip.Deposits.Add(deposit);
 
-        await _depositRepo.AddAsync(deposit);
-        await _depositRepo.SaveChangesAsync();
-        await SaveOrUpdateTripAsync(trip);
+        await _tripRepo.SaveChangesAsync();
     }
 
     public async Task<List<Deposit>> GetDepositsAsync(string tripCode)
@@ -298,8 +296,7 @@ public class TripService : ITripService
         trip.Deposits.Remove(deposit);
 
         await _depositRepo.DeleteAsync(deposit);
-        await _depositRepo.SaveChangesAsync();
-        await SaveOrUpdateTripAsync(trip);
+        await _tripRepo.SaveChangesAsync();
     }
 
     public async Task UpdateDepositAsync(string tripCode, int depositId, string payerName, DateTime date, decimal amount, bool allowBudgetIncrease = false)
@@ -321,6 +318,7 @@ public class TripService : ITripService
 
         var previousParticipant = trip.Participants.FirstOrDefault(p => p.Id == deposit.ParticipantId);
         previousParticipant?.Deposits.Remove(deposit);
+        trip.Deposits.Remove(deposit);
 
         var totalWithoutCurrent = participant.Deposits
             .Where(d => d.Id != depositId)
@@ -346,10 +344,9 @@ public class TripService : ITripService
         deposit.Trip = trip;
 
         participant.Deposits.Add(deposit);
+        trip.Deposits.Add(deposit);
 
-        await _depositRepo.UpdateAsync(deposit);
-        await _depositRepo.SaveChangesAsync();
-        await SaveOrUpdateTripAsync(trip);
+        await _tripRepo.SaveChangesAsync();
     }
 
     public async Task<decimal> GetTotalBudgetAsync(string tripCode) =>
