@@ -47,18 +47,20 @@ jobs:
       # -----------------------
       # BUILD ANDROID (SOLO MAUI)
       # -----------------------
-      - name: Restore MAUI
-        run: dotnet restore CassaComuneAnM.MauiAppUi/CassaComuneAnM.MauiAppUi.csproj
+      - name: Restore
+        run: dotnet restore CassaComuneAnM.sln -p:CI_ANDROID_BUILD=true -p:RuntimeIdentifier=android-arm64
 
-      - name: Build MAUI
-        run: dotnet build CassaComuneAnM.MauiAppUi/CassaComuneAnM.MauiAppUi.csproj -c Release --no-restore -p:RuntimeIdentifier=android-arm64
+      - name: Build
+        run: dotnet build CassaComuneAnM.sln -c Release --no-restore -p:CI_ANDROID_BUILD=true -p:RuntimeIdentifier=android-arm64
 
       - name: Publish Android APK
         run: |
           dotnet publish CassaComuneAnM.MauiAppUi/CassaComuneAnM.MauiAppUi.csproj \
             -f net8.0-android \
             -c Release \
-            --no-build \
+            --no-restore \
+            -p:CI_ANDROID_BUILD=true \
+            -p:RuntimeIdentifier=android-arm64 \
             -p:AndroidPackageFormat=apk \
             -o ./artifacts
 
