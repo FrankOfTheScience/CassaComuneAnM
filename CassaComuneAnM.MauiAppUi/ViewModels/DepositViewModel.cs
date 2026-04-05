@@ -10,11 +10,12 @@ public class DepositViewModel : BaseViewModel
     private readonly ITripService _tripService;
     private readonly string _tripCode;
     private Participant? _selectedParticipant;
-    private decimal _amount;
+    private string _amountInput = string.Empty;
     private DateTime _depositDate = DateTime.Today;
     private int? _editingDepositId;
     private string _submitButtonText = "Registra versamento";
     private bool _isEditing;
+    private string _budgetPreviewText = "Seleziona un partecipante per vedere il residuo disponibile.";
 
     public ObservableCollection<Participant> Participants { get; } = new();
     public ObservableCollection<DepositHistoryItemViewModel> Deposits { get; } = new();
@@ -22,19 +23,37 @@ public class DepositViewModel : BaseViewModel
     public Participant? SelectedParticipant
     {
         get => _selectedParticipant;
-        set => SetProperty(ref _selectedParticipant, value);
+        set
+        {
+            if (SetProperty(ref _selectedParticipant, value))
+            {
+                UpdateBudgetPreview();
+            }
+        }
     }
 
-    public decimal Amount
+    public string AmountInput
     {
-        get => _amount;
-        set => SetProperty(ref _amount, value);
+        get => _amountInput;
+        set
+        {
+            if (SetProperty(ref _amountInput, value))
+            {
+                UpdateBudgetPreview();
+            }
+        }
     }
 
     public DateTime DepositDate
     {
         get => _depositDate;
         set => SetProperty(ref _depositDate, value);
+    }
+
+    public string BudgetPreviewText
+    {
+        get => _budgetPreviewText;
+        set => SetProperty(ref _budgetPreviewText, value);
     }
 
     public string SubmitButtonText
@@ -102,6 +121,8 @@ public class DepositViewModel : BaseViewModel
                 RemainingBudget = participant is null ? 0m : participant.PersonalBudget - totalPaid
             });
         }
+
+        UpdateBudgetPreview();
     }
 
     private async Task AddDepositAsync()
@@ -112,9 +133,9 @@ public class DepositViewModel : BaseViewModel
             return;
         }
 
-        if (Amount <= 0)
+        if (!TryParseDecimalInput(AmountInput, out var amount) || amount <= 0)
         {
-            await ShowAlertAsync("Importo non valido", "L'importo deve essere maggiore di zero.");
+            await ShowAlertAsync("Importo non valido", "Inserisci un importo maggiore di zero.");
             return;
         }
 
@@ -132,7 +153,7 @@ public class DepositViewModel : BaseViewModel
         var remainingBudget = participant.PersonalBudget - currentPaid;
         var allowBudgetIncrease = false;
 
-        if (Amount > remainingBudget)
+        if (amount > remainingBudget)
         {
             allowBudgetIncrease = await ShowConfirmAsync(
                 "Aumenta budget",
@@ -144,17 +165,20 @@ public class DepositViewModel : BaseViewModel
             }
         }
 
-        if (_editingDepositId.HasValue)
+        await RunBusyAsync(async () =>
         {
-            await _tripService.UpdateDepositAsync(_tripCode, _editingDepositId.Value, SelectedParticipant.Name, DepositDate, Amount, allowBudgetIncrease);
-        }
-        else
-        {
-            await _tripService.AddDepositAsync(_tripCode, SelectedParticipant.Name, DepositDate, Amount, allowBudgetIncrease);
-        }
+            if (_editingDepositId.HasValue)
+            {
+                await _tripService.UpdateDepositAsync(_tripCode, _editingDepositId.Value, SelectedParticipant.Name, DepositDate, amount, allowBudgetIncrease);
+            }
+            else
+            {
+                await _tripService.AddDepositAsync(_tripCode, SelectedParticipant.Name, DepositDate, amount, allowBudgetIncrease);
+            }
 
-        CancelEdit();
-        await LoadAsync();
+            CancelEdit();
+            await LoadAsync();
+        });
     }
 
     private async Task DeleteDepositAsync(DepositHistoryItemViewModel? deposit)
@@ -170,8 +194,11 @@ public class DepositViewModel : BaseViewModel
             return;
         }
 
-        await _tripService.DeleteDepositAsync(_tripCode, deposit.Id);
-        await LoadAsync();
+        await RunBusyAsync(async () =>
+        {
+            await _tripService.DeleteDepositAsync(_tripCode, deposit.Id);
+            await LoadAsync();
+        });
     }
 
     private void StartEditDeposit(DepositHistoryItemViewModel? deposit)
@@ -183,18 +210,41 @@ public class DepositViewModel : BaseViewModel
 
         _editingDepositId = deposit.Id;
         SelectedParticipant = Participants.FirstOrDefault(p => p.Name == deposit.PayerName);
-        Amount = deposit.Amount;
+        AmountInput = FormatDecimalInput(deposit.Amount, "0.00##");
         DepositDate = deposit.Date;
         SubmitButtonText = "Salva modifiche";
         IsEditing = true;
+        UpdateBudgetPreview();
     }
 
     private void CancelEdit()
     {
         _editingDepositId = null;
-        Amount = 0m;
+        AmountInput = string.Empty;
         DepositDate = DateTime.Today;
         SubmitButtonText = "Registra versamento";
         IsEditing = false;
+        UpdateBudgetPreview();
+    }
+
+    private void UpdateBudgetPreview()
+    {
+        if (SelectedParticipant is null)
+        {
+            BudgetPreviewText = "Seleziona un partecipante per vedere il residuo disponibile.";
+            return;
+        }
+
+        var alreadyPaid = SelectedParticipant.Deposits
+            .Where(d => !_editingDepositId.HasValue || d.Id != _editingDepositId.Value)
+            .Sum(d => d.Amount);
+        var remaining = SelectedParticipant.PersonalBudget - alreadyPaid;
+        var projected = TryParseDecimalInput(AmountInput, out var amount)
+            ? remaining - amount
+            : remaining;
+
+        BudgetPreviewText =
+            $"Residuo attuale di {SelectedParticipant.Name}: EUR {remaining:F2}. " +
+            $"Residuo dopo questo versamento: EUR {projected:F2}.";
     }
 }

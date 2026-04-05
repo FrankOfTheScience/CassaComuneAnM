@@ -7,17 +7,21 @@
     Title="Spese">
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="18">
-            <Frame Padding="16">
+            <Label Style="{StaticResource HeroLabel}" FontSize="24" Text="SPESE" />
+            <Label Style="{StaticResource MutedLabel}" Text="REGISTRA, MODIFICA E CONTROLLA LE SPESE DEL VIAGGIO." />
+
+            <Frame Padding="16" BackgroundColor="{StaticResource SurfaceAlt}" BorderColor="{StaticResource BorderStrong}">
                 <VerticalStackLayout Spacing="10">
                     <Entry Placeholder="Descrizione spesa" Text="{Binding Description}" />
-                    <Entry Keyboard="Numeric" Placeholder="Importo" Text="{Binding Amount}" />
+                    <Entry Keyboard="Numeric" Placeholder="Importo spesa in EUR" Text="{Binding AmountInput}" />
                     <DatePicker Date="{Binding ExpenseDate}" />
                     <HorizontalStackLayout Spacing="12">
                         <CheckBox IsChecked="{Binding TourLeaderFree}" />
                         <Label VerticalTextAlignment="Center" Text="Tour leader gratuito" />
                     </HorizontalStackLayout>
+                    <Label FontSize="12" Text="{Binding HelperText}" TextColor="#52606D" />
 
-                    <Label FontAttributes="Bold" Text="Escludi partecipanti dal beneficio" />
+                    <Label Style="{StaticResource SectionLabel}" FontSize="13" Text="ESCLUDI PARTECIPANTI DAL BENEFICIO" />
                     <VerticalStackLayout BindableLayout.ItemsSource="{Binding Participants}" Spacing="8">
                         <BindableLayout.ItemTemplate>
                             <DataTemplate>
@@ -29,29 +33,32 @@
                         </BindableLayout.ItemTemplate>
                     </VerticalStackLayout>
 
-                    <Button Command="{Binding AddExpenseCommand}" Text="{Binding SubmitButtonText}" />
-                    <Button Command="{Binding CancelEditCommand}" IsVisible="{Binding IsEditing}" Text="Annulla modifica" />
+                    <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+                    <Button Command="{Binding AddExpenseCommand}" IsEnabled="{Binding IsNotBusy}" Text="{Binding SubmitButtonText}" />
+                    <Button Command="{Binding CancelEditCommand}" IsEnabled="{Binding IsNotBusy}" IsVisible="{Binding IsEditing}" Text="ANNULLA MODIFICA" />
                 </VerticalStackLayout>
             </Frame>
 
-            <Label FontAttributes="Bold" FontSize="20" Text="Storico spese" />
+            <Label Style="{StaticResource SectionLabel}" Text="STORICO SPESE" />
             <CollectionView EmptyView="Nessuna spesa." ItemsSource="{Binding Expenses}">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <Frame Margin="0,0,0,12" Padding="14">
+                        <Frame Margin="0,0,0,12" Padding="14" BackgroundColor="{StaticResource SurfaceAlt}">
                             <VerticalStackLayout Spacing="6">
-                                <Label FontAttributes="Bold" Text="{Binding Description}" />
+                                <Label Style="{StaticResource CardTitleLabel}" FontSize="15" Text="{Binding Description, Converter={StaticResource UppercaseConverter}}" />
                                 <Label Text="{Binding Date, StringFormat='Data: {0:dd/MM/yyyy}'}" />
                                 <Label Text="{Binding Amount, StringFormat='Importo: EUR {0:F2}'}" />
                                 <Label Text="{Binding BeneficiariesText, StringFormat='Beneficiari: {0}'}" />
                                 <Button
                                     Command="{Binding Source={x:Reference ExpenseRoot}, Path=BindingContext.StartEditExpenseCommand}"
                                     CommandParameter="{Binding .}"
-                                    Text="Modifica spesa" />
+                                    IsEnabled="{Binding Source={x:Reference ExpenseRoot}, Path=BindingContext.IsNotBusy}"
+                                    Text="MODIFICA SPESA" />
                                 <Button
                                     Command="{Binding Source={x:Reference ExpenseRoot}, Path=BindingContext.DeleteExpenseCommand}"
                                     CommandParameter="{Binding .}"
-                                    Text="Elimina spesa" />
+                                    IsEnabled="{Binding Source={x:Reference ExpenseRoot}, Path=BindingContext.IsNotBusy}"
+                                    Text="ELIMINA SPESA" />
                             </VerticalStackLayout>
                         </Frame>
                     </DataTemplate>

@@ -1,5 +1,6 @@
 using CassaComuneAnm.Application.Interfaces;
 using CassaComuneAnM.Core.Entities;
+using CassaComuneAnM.Core.Enums;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 
@@ -14,14 +15,15 @@ public class CreateTripViewModel : BaseViewModel
     private string _coordinatorName = string.Empty;
     private string _coordinatorCode = string.Empty;
     private string _cashierName = string.Empty;
-    private string _country = "Italia";
-    private string _currency = "EUR";
-    private decimal _exchangeRate = 1m;
-    private decimal _budgetPerPax;
+    private string _country = string.Empty;
+    private CurrencyCode? _selectedCurrency;
+    private string _exchangeRateInput = string.Empty;
+    private string _budgetPerPaxInput = string.Empty;
     private string _participantName = string.Empty;
-    private decimal _participantBudget;
+    private string _participantBudgetInput = string.Empty;
 
     public ObservableCollection<InitialParticipantViewModel> Participants { get; } = new();
+    public IReadOnlyList<CurrencyCode> SupportedCurrencies { get; } = Enum.GetValues<CurrencyCode>();
 
     public string TripName
     {
@@ -65,22 +67,28 @@ public class CreateTripViewModel : BaseViewModel
         set => SetProperty(ref _country, value);
     }
 
-    public string Currency
+    public CurrencyCode? SelectedCurrency
     {
-        get => _currency;
-        set => SetProperty(ref _currency, value);
+        get => _selectedCurrency;
+        set
+        {
+            if (SetProperty(ref _selectedCurrency, value))
+            {
+                OnPropertyChanged(nameof(ExchangeRatePlaceholder));
+            }
+        }
     }
 
-    public decimal ExchangeRate
+    public string ExchangeRateInput
     {
-        get => _exchangeRate;
-        set => SetProperty(ref _exchangeRate, value);
+        get => _exchangeRateInput;
+        set => SetProperty(ref _exchangeRateInput, value);
     }
 
-    public decimal BudgetPerPax
+    public string BudgetPerPaxInput
     {
-        get => _budgetPerPax;
-        set => SetProperty(ref _budgetPerPax, value);
+        get => _budgetPerPaxInput;
+        set => SetProperty(ref _budgetPerPaxInput, value);
     }
 
     public string ParticipantName
@@ -89,11 +97,19 @@ public class CreateTripViewModel : BaseViewModel
         set => SetProperty(ref _participantName, value);
     }
 
-    public decimal ParticipantBudget
+    public string ParticipantBudgetInput
     {
-        get => _participantBudget;
-        set => SetProperty(ref _participantBudget, value);
+        get => _participantBudgetInput;
+        set => SetProperty(ref _participantBudgetInput, value);
     }
+
+    public string ExchangeRatePlaceholder =>
+        SelectedCurrency switch
+        {
+            null => "Cambio contro EUR, es. USD 1,10 = 1 EUR vale 1,10 USD",
+            CurrencyCode.EUR => "Cambio contro EUR, per EUR lascia vuoto oppure inserisci 1",
+            _ => $"Cambio contro EUR, es. {SelectedCurrency} 1,10 = 1 EUR vale 1,10 {SelectedCurrency}"
+        };
 
     public ICommand SaveTripCommand { get; }
     public ICommand AddParticipantCommand { get; }
@@ -115,14 +131,21 @@ public class CreateTripViewModel : BaseViewModel
             return;
         }
 
+        var baseBudget = TryParseDecimalInput(BudgetPerPaxInput, out var parsedBaseBudget)
+            ? parsedBaseBudget
+            : 0m;
+        var participantBudget = TryParseDecimalInput(ParticipantBudgetInput, out var parsedParticipantBudget)
+            ? parsedParticipantBudget
+            : baseBudget;
+
         Participants.Add(new InitialParticipantViewModel
         {
             Name = ParticipantName.Trim(),
-            PersonalBudget = ParticipantBudget > 0 ? ParticipantBudget : BudgetPerPax
+            PersonalBudget = participantBudget
         });
 
         ParticipantName = string.Empty;
-        ParticipantBudget = 0m;
+        ParticipantBudgetInput = string.Empty;
     }
 
     private void RemoveParticipant(InitialParticipantViewModel? participant)
@@ -141,48 +164,100 @@ public class CreateTripViewModel : BaseViewModel
             string.IsNullOrWhiteSpace(TripCode) ||
             string.IsNullOrWhiteSpace(CoordinatorName) ||
             string.IsNullOrWhiteSpace(CoordinatorCode) ||
-            string.IsNullOrWhiteSpace(CashierName))
+            string.IsNullOrWhiteSpace(CashierName) ||
+            string.IsNullOrWhiteSpace(Country))
         {
             await ShowAlertAsync("Dati mancanti", "Compila i campi obbligatori del viaggio.");
             return;
         }
 
-        var normalizedTripCode = TripCode.Trim().ToUpperInvariant();
-        var existingTrip = await _tripService.GetTripByCodeAsync(normalizedTripCode);
-        if (existingTrip is not null)
+        if (!SelectedCurrency.HasValue)
         {
-            await ShowAlertAsync("Codice duplicato", "Esiste già un viaggio con questo codice.");
+            await ShowAlertAsync("Valuta mancante", "Seleziona una valuta valida per il viaggio.");
             return;
         }
 
-        var trip = new Trip
+        if (!TryGetExchangeRate(out var exchangeRate, out var exchangeRateError))
         {
-            TripName = TripName.Trim(),
-            TripCode = normalizedTripCode,
-            TripDate = TripDate,
-            CoordinatorName = CoordinatorName.Trim(),
-            CoordinatorCode = CoordinatorCode.Trim().ToUpperInvariant(),
-            CashierName = CashierName.Trim(),
-            Country = Country.Trim(),
-            Currency = Currency.Trim().ToUpperInvariant(),
-            ExchangeRate = ExchangeRate <= 0 ? 1m : ExchangeRate,
-            BudgetPerPax = BudgetPerPax
-        };
-
-        foreach (var participant in Participants.Where(p => !string.IsNullOrWhiteSpace(p.Name)))
-        {
-            trip.Participants.Add(new Participant
-            {
-                Name = participant.Name.Trim(),
-                Balance = 0m,
-                PersonalBudget = participant.PersonalBudget > 0 ? participant.PersonalBudget : BudgetPerPax,
-                TripId = 0,
-                Trip = trip
-            });
+            await ShowAlertAsync("Cambio non valido", exchangeRateError);
+            return;
         }
 
-        await _tripService.CreateTripAsync(trip);
-        await ShowAlertAsync("Viaggio creato", "Il viaggio è stato salvato.");
-        await Navigation!.PopAsync();
+        var budgetPerPax = TryParseDecimalInput(BudgetPerPaxInput, out var parsedBudgetPerPax)
+            ? parsedBudgetPerPax
+            : 0m;
+
+        await RunBusyAsync(async () =>
+        {
+            var normalizedTripCode = TripCode.Trim().ToUpperInvariant();
+            var existingTrip = await _tripService.GetTripByCodeAsync(normalizedTripCode);
+            if (existingTrip is not null)
+            {
+                await ShowAlertAsync("Codice duplicato", "Esiste già un viaggio con questo codice.");
+                return;
+            }
+
+            var trip = new Trip
+            {
+                TripName = TripName.Trim(),
+                TripCode = normalizedTripCode,
+                TripDate = TripDate,
+                CoordinatorName = CoordinatorName.Trim(),
+                CoordinatorCode = CoordinatorCode.Trim().ToUpperInvariant(),
+                CashierName = CashierName.Trim(),
+                Country = Country.Trim(),
+                Currency = SelectedCurrency.Value.ToString(),
+                ExchangeRate = exchangeRate,
+                BudgetPerPax = budgetPerPax
+            };
+
+            foreach (var participant in Participants.Where(p => !string.IsNullOrWhiteSpace(p.Name)))
+            {
+                trip.Participants.Add(new Participant
+                {
+                    Name = participant.Name.Trim(),
+                    Balance = 0m,
+                    PersonalBudget = participant.PersonalBudget > 0 ? participant.PersonalBudget : budgetPerPax,
+                    TripId = 0,
+                    Trip = trip
+                });
+            }
+
+            await _tripService.CreateTripAsync(trip);
+            await ShowAlertAsync("Viaggio creato", "Il viaggio è stato salvato.");
+            await Navigation!.PopAsync();
+        });
+    }
+
+    private bool TryGetExchangeRate(out decimal exchangeRate, out string errorMessage)
+    {
+        exchangeRate = 1m;
+        errorMessage = string.Empty;
+
+        if (SelectedCurrency == CurrencyCode.EUR)
+        {
+            if (string.IsNullOrWhiteSpace(ExchangeRateInput))
+            {
+                return true;
+            }
+
+            if (TryParseDecimalInput(ExchangeRateInput, out var eurRate) && eurRate > 0)
+            {
+                exchangeRate = eurRate;
+                return true;
+            }
+
+            errorMessage = "Per EUR lascia il campo vuoto oppure inserisci 1.";
+            return false;
+        }
+
+        if (TryParseDecimalInput(ExchangeRateInput, out var parsedRate) && parsedRate > 0)
+        {
+            exchangeRate = parsedRate;
+            return true;
+        }
+
+        errorMessage = "Inserisci il valore della valuta locale corrispondente a 1 EUR. Esempio: USD 1,10 significa che 1 EUR vale 1,10 USD.";
+        return false;
     }
 }

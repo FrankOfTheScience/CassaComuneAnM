@@ -11,7 +11,7 @@ public class ParticipantViewModel : BaseViewModel
     private readonly string _tripCode;
     private Trip? _trip;
     private string _participantName = string.Empty;
-    private decimal _personalBudget;
+    private string _personalBudgetInput = string.Empty;
 
     public ObservableCollection<Participant> Participants { get; } = new();
 
@@ -21,11 +21,16 @@ public class ParticipantViewModel : BaseViewModel
         set => SetProperty(ref _participantName, value);
     }
 
-    public decimal PersonalBudget
+    public string PersonalBudgetInput
     {
-        get => _personalBudget;
-        set => SetProperty(ref _personalBudget, value);
+        get => _personalBudgetInput;
+        set => SetProperty(ref _personalBudgetInput, value);
     }
+
+    public string PersonalBudgetPlaceholder =>
+        _trip?.BudgetPerPax > 0
+            ? $"Budget personale in EUR, vuoto = budget base viaggio ({_trip.BudgetPerPax:F2})"
+            : "Budget personale in EUR per questo partecipante";
 
     public ICommand AddParticipantCommand { get; }
     public ICommand RemoveParticipantCommand { get; }
@@ -44,6 +49,7 @@ public class ParticipantViewModel : BaseViewModel
     {
         _trip = await _tripService.GetTripByCodeAsync(_tripCode);
         Participants.Clear();
+        OnPropertyChanged(nameof(PersonalBudgetPlaceholder));
 
         if (_trip is null)
         {
@@ -81,19 +87,26 @@ public class ParticipantViewModel : BaseViewModel
             return;
         }
 
+        var personalBudget = TryParseDecimalInput(PersonalBudgetInput, out var parsedBudget)
+            ? parsedBudget
+            : _trip.BudgetPerPax;
+
         var participant = new Participant
         {
             Name = ParticipantName.Trim(),
             Balance = 0m,
-            PersonalBudget = PersonalBudget,
+            PersonalBudget = personalBudget,
             TripId = _trip.Id,
             Trip = _trip
         };
 
-        await _tripService.AddParticipantAsync(_tripCode, participant);
-        ParticipantName = string.Empty;
-        PersonalBudget = 0m;
-        await LoadAsync();
+        await RunBusyAsync(async () =>
+        {
+            await _tripService.AddParticipantAsync(_tripCode, participant);
+            ParticipantName = string.Empty;
+            PersonalBudgetInput = string.Empty;
+            await LoadAsync();
+        });
     }
 
     private async Task RemoveParticipantAsync(Participant? participant)
@@ -109,7 +122,10 @@ public class ParticipantViewModel : BaseViewModel
             return;
         }
 
-        await _tripService.RemoveParticipantAsync(_tripCode, participant.Name);
-        await LoadAsync();
+        await RunBusyAsync(async () =>
+        {
+            await _tripService.RemoveParticipantAsync(_tripCode, participant.Name);
+            await LoadAsync();
+        });
     }
 }

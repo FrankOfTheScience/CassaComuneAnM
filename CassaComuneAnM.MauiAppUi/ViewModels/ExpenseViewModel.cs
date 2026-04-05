@@ -8,8 +8,9 @@ public class ExpenseViewModel : BaseViewModel
 {
     private readonly ITripService _tripService;
     private readonly string _tripCode;
+    private string _helperText = "Seleziona chi non beneficia della spesa. Se non selezioni nessuno, la spesa viene ripartita su tutto il gruppo.";
     private string _description = string.Empty;
-    private decimal _amount;
+    private string _amountInput = string.Empty;
     private DateTime _expenseDate = DateTime.Today;
     private bool _tourLeaderFree;
     private int? _editingExpenseId;
@@ -22,13 +23,25 @@ public class ExpenseViewModel : BaseViewModel
     public string Description
     {
         get => _description;
-        set => SetProperty(ref _description, value);
+        set
+        {
+            if (SetProperty(ref _description, value))
+            {
+                UpdateHelperText();
+            }
+        }
     }
 
-    public decimal Amount
+    public string AmountInput
     {
-        get => _amount;
-        set => SetProperty(ref _amount, value);
+        get => _amountInput;
+        set
+        {
+            if (SetProperty(ref _amountInput, value))
+            {
+                UpdateHelperText();
+            }
+        }
     }
 
     public DateTime ExpenseDate
@@ -40,7 +53,19 @@ public class ExpenseViewModel : BaseViewModel
     public bool TourLeaderFree
     {
         get => _tourLeaderFree;
-        set => SetProperty(ref _tourLeaderFree, value);
+        set
+        {
+            if (SetProperty(ref _tourLeaderFree, value))
+            {
+                UpdateHelperText();
+            }
+        }
+    }
+
+    public string HelperText
+    {
+        get => _helperText;
+        set => SetProperty(ref _helperText, value);
     }
 
     public string SubmitButtonText
@@ -86,7 +111,15 @@ public class ExpenseViewModel : BaseViewModel
 
         foreach (var participant in trip.Participants.OrderBy(p => p.Name))
         {
-            Participants.Add(new SelectableParticipantViewModel { Name = participant.Name });
+            var selectable = new SelectableParticipantViewModel { Name = participant.Name };
+            selectable.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(SelectableParticipantViewModel.IsSelected))
+                {
+                    UpdateHelperText();
+                }
+            };
+            Participants.Add(selectable);
         }
 
         foreach (var expense in expenses.OrderByDescending(e => e.Date).ThenByDescending(e => e.Id))
@@ -118,25 +151,28 @@ public class ExpenseViewModel : BaseViewModel
             return;
         }
 
-        if (Amount <= 0)
+        if (!TryParseDecimalInput(AmountInput, out var amount) || amount <= 0)
         {
-            await ShowAlertAsync("Importo non valido", "L'importo deve essere maggiore di zero.");
+            await ShowAlertAsync("Importo non valido", "Inserisci un importo maggiore di zero.");
             return;
         }
 
         var excludedNames = Participants.Where(p => p.IsSelected).Select(p => p.Name).ToList();
 
-        if (_editingExpenseId.HasValue)
+        await RunBusyAsync(async () =>
         {
-            await _tripService.UpdateExpenseAsync(_tripCode, _editingExpenseId.Value, ExpenseDate, Description.Trim(), Amount, TourLeaderFree, excludedNames);
-        }
-        else
-        {
-            await _tripService.AddExpenseAsync(_tripCode, ExpenseDate, Description.Trim(), Amount, TourLeaderFree, excludedNames);
-        }
+            if (_editingExpenseId.HasValue)
+            {
+                await _tripService.UpdateExpenseAsync(_tripCode, _editingExpenseId.Value, ExpenseDate, Description.Trim(), amount, TourLeaderFree, excludedNames);
+            }
+            else
+            {
+                await _tripService.AddExpenseAsync(_tripCode, ExpenseDate, Description.Trim(), amount, TourLeaderFree, excludedNames);
+            }
 
-        CancelEdit();
-        await LoadAsync();
+            CancelEdit();
+            await LoadAsync();
+        });
     }
 
     private async Task DeleteExpenseAsync(ExpenseHistoryItemViewModel? expense)
@@ -152,8 +188,11 @@ public class ExpenseViewModel : BaseViewModel
             return;
         }
 
-        await _tripService.DeleteExpenseAsync(_tripCode, expense.Id);
-        await LoadAsync();
+        await RunBusyAsync(async () =>
+        {
+            await _tripService.DeleteExpenseAsync(_tripCode, expense.Id);
+            await LoadAsync();
+        });
     }
 
     private void StartEditExpense(ExpenseHistoryItemViewModel? expense)
@@ -165,7 +204,7 @@ public class ExpenseViewModel : BaseViewModel
 
         _editingExpenseId = expense.Id;
         Description = expense.Description;
-        Amount = expense.Amount;
+        AmountInput = FormatDecimalInput(expense.Amount, "0.00##");
         ExpenseDate = expense.Date;
         TourLeaderFree = expense.Description.Contains("TL Free", StringComparison.OrdinalIgnoreCase);
         SubmitButtonText = "Salva modifiche";
@@ -185,7 +224,7 @@ public class ExpenseViewModel : BaseViewModel
     {
         _editingExpenseId = null;
         Description = string.Empty;
-        Amount = 0m;
+        AmountInput = string.Empty;
         ExpenseDate = DateTime.Today;
         TourLeaderFree = false;
         SubmitButtonText = "Registra spesa";
@@ -195,5 +234,32 @@ public class ExpenseViewModel : BaseViewModel
         {
             participant.IsSelected = false;
         }
+
+        UpdateHelperText();
+    }
+
+    private void UpdateHelperText()
+    {
+        var participantCount = Participants.Count;
+        var excludedCount = Participants.Count(p => p.IsSelected);
+        var beneficiaries = Math.Max(0, participantCount - excludedCount);
+
+        if (participantCount == 0)
+        {
+            HelperText = "Aggiungi prima dei partecipanti al viaggio per poter registrare una spesa.";
+            return;
+        }
+
+        if (beneficiaries == 0)
+        {
+            HelperText = "Almeno un partecipante deve beneficiare della spesa.";
+            return;
+        }
+
+        var amountPerHead = TryParseDecimalInput(AmountInput, out var amount) && amount > 0
+            ? amount / participantCount
+            : 0m;
+        var tlSuffix = TourLeaderFree ? " Modalità tour leader gratuito attiva." : string.Empty;
+        HelperText = $"Beneficiari: {beneficiaries}/{participantCount}. Quota base per testa: EUR {amountPerHead:F2}.{tlSuffix}";
     }
 }

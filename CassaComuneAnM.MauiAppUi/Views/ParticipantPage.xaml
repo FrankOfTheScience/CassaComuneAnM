@@ -9,7 +9,7 @@
         <Frame Padding="16">
             <VerticalStackLayout Spacing="10">
                 <Entry Placeholder="Nome partecipante" Text="{Binding ParticipantName}" />
-                <Entry Keyboard="Numeric" Placeholder="Budget personale" Text="{Binding PersonalBudget}" />
+                <Entry Keyboard="Numeric" Placeholder="{Binding PersonalBudgetPlaceholder}" Text="{Binding PersonalBudgetInput}" />
                 <Button Command="{Binding AddParticipantCommand}" Text="Aggiungi partecipante" />
             </VerticalStackLayout>
         </Frame>

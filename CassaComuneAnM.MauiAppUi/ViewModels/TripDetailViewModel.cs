@@ -1,5 +1,6 @@
 using CassaComuneAnm.Application.Interfaces;
 using CassaComuneAnM.Core.Entities;
+using CassaComuneAnM.Core.Enums;
 using CassaComuneAnM.MauiAppUi.Views;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
@@ -13,8 +14,11 @@ public class TripDetailViewModel : BaseViewModel
     private readonly string _tripCode;
     private Trip? _trip;
     private bool _isEditingTrip;
+    private CurrencyCode? _selectedCurrency;
+    private string _exchangeRateInput = string.Empty;
 
     public ObservableCollection<ParticipantSummaryViewModel> ParticipantSummaries { get; } = new();
+    public IReadOnlyList<CurrencyCode> SupportedCurrencies { get; } = Enum.GetValues<CurrencyCode>();
 
     public Trip? Trip
     {
@@ -27,6 +31,37 @@ public class TripDetailViewModel : BaseViewModel
         get => _isEditingTrip;
         set => SetProperty(ref _isEditingTrip, value);
     }
+
+    public CurrencyCode? SelectedCurrency
+    {
+        get => _selectedCurrency;
+        set
+        {
+            if (SetProperty(ref _selectedCurrency, value))
+            {
+                if (Trip is not null && value.HasValue)
+                {
+                    Trip.Currency = value.Value.ToString();
+                }
+
+                OnPropertyChanged(nameof(ExchangeRatePlaceholder));
+            }
+        }
+    }
+
+    public string ExchangeRateInput
+    {
+        get => _exchangeRateInput;
+        set => SetProperty(ref _exchangeRateInput, value);
+    }
+
+    public string ExchangeRatePlaceholder =>
+        SelectedCurrency switch
+        {
+            null => "Cambio contro EUR, es. USD 1,10 = 1 EUR vale 1,10 USD",
+            CurrencyCode.EUR => "Cambio contro EUR, per EUR lascia 1",
+            _ => $"Cambio contro EUR, es. {SelectedCurrency} 1,10 = 1 EUR vale 1,10 {SelectedCurrency}"
+        };
 
     public ICommand ManageParticipantsCommand { get; }
     public ICommand ManageExpensesCommand { get; }
@@ -68,6 +103,7 @@ public class TripDetailViewModel : BaseViewModel
             if (Trip is not null)
             {
                 Title = Trip.TripName;
+                SyncEditableFieldsFromTrip();
 
                 foreach (var participant in Trip.Participants.OrderBy(p => p.Name))
                 {
@@ -101,8 +137,11 @@ public class TripDetailViewModel : BaseViewModel
             return;
         }
 
-        await _tripService.DeleteTripAsync(_tripCode);
-        await Navigation!.PopAsync();
+        await RunBusyAsync(async () =>
+        {
+            await _tripService.DeleteTripAsync(_tripCode);
+            await Navigation!.PopAsync();
+        });
     }
 
     private void StartTripEdit()
@@ -112,11 +151,13 @@ public class TripDetailViewModel : BaseViewModel
             return;
         }
 
+        SyncEditableFieldsFromTrip();
         IsEditingTrip = true;
     }
 
     private void CancelTripEdit()
     {
+        SyncEditableFieldsFromTrip();
         IsEditingTrip = false;
     }
 
@@ -127,8 +168,72 @@ public class TripDetailViewModel : BaseViewModel
             return;
         }
 
-        await _tripService.SaveOrUpdateTripAsync(Trip);
-        IsEditingTrip = false;
-        await LoadTripAsync();
+        if (!SelectedCurrency.HasValue)
+        {
+            await ShowAlertAsync("Valuta mancante", "Seleziona una valuta valida per il viaggio.");
+            return;
+        }
+
+        if (!TryGetExchangeRate(out var exchangeRate, out var exchangeRateError))
+        {
+            await ShowAlertAsync("Cambio non valido", exchangeRateError);
+            return;
+        }
+
+        await RunBusyAsync(async () =>
+        {
+            Trip.Currency = SelectedCurrency.Value.ToString();
+            Trip.ExchangeRate = exchangeRate;
+            await _tripService.SaveOrUpdateTripAsync(Trip);
+            IsEditingTrip = false;
+            await LoadTripAsync();
+        });
+    }
+
+    private void SyncEditableFieldsFromTrip()
+    {
+        if (Trip is null)
+        {
+            SelectedCurrency = null;
+            ExchangeRateInput = string.Empty;
+            return;
+        }
+
+        SelectedCurrency = Enum.TryParse<CurrencyCode>(Trip.Currency, ignoreCase: true, out var parsedCurrency)
+            ? parsedCurrency
+            : null;
+        ExchangeRateInput = FormatDecimalInput(Trip.ExchangeRate, "0.####");
+    }
+
+    private bool TryGetExchangeRate(out decimal exchangeRate, out string errorMessage)
+    {
+        exchangeRate = 1m;
+        errorMessage = string.Empty;
+
+        if (SelectedCurrency == CurrencyCode.EUR)
+        {
+            if (string.IsNullOrWhiteSpace(ExchangeRateInput))
+            {
+                return true;
+            }
+
+            if (TryParseDecimalInput(ExchangeRateInput, out var eurRate) && eurRate > 0)
+            {
+                exchangeRate = eurRate;
+                return true;
+            }
+
+            errorMessage = "Per EUR lascia il campo vuoto oppure inserisci 1.";
+            return false;
+        }
+
+        if (TryParseDecimalInput(ExchangeRateInput, out var parsedRate) && parsedRate > 0)
+        {
+            exchangeRate = parsedRate;
+            return true;
+        }
+
+        errorMessage = "Inserisci il valore della valuta locale corrispondente a 1 EUR. Esempio: USD 1,10 significa che 1 EUR vale 1,10 USD.";
+        return false;
     }
 }

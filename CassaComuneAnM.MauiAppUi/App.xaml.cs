@@ -1,10 +1,12 @@
-﻿namespace CassaComuneAnM.MauiAppUi;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace CassaComuneAnM.MauiAppUi;
 
 public partial class App : Application
 {
-    public App(MainPage mainPage)
+    public App(IServiceProvider services)
     {
         InitializeComponent();
-        MainPage = new NavigationPage(mainPage);
+        MainPage = new NavigationPage(services.GetRequiredService<MainPage>());
     }
 }

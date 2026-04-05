@@ -6,16 +6,22 @@
     Title="Cassa Comune">
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="18">
-            <Label FontAttributes="Bold" FontSize="28" Text="Cassa Comune AnM" />
+            <Frame BackgroundColor="{StaticResource SurfaceAlt}" BorderColor="{StaticResource BorderStrong}" Padding="22" CornerRadius="20">
+                <VerticalStackLayout Spacing="10">
+                    <Label Style="{StaticResource HeroLabel}" Text="CASSA COMUNE ANM" />
+                    <BoxView HeightRequest="4" HorizontalOptions="Start" WidthRequest="84" Color="{StaticResource Primary}" />
+                </VerticalStackLayout>
+            </Frame>
             <Label
+                Style="{StaticResource MutedLabel}"
                 FontSize="16"
                 Text="Frontend MAUI per la gestione di viaggi, partecipanti, spese e versamenti." />
 
-            <Frame BackgroundColor="#F5F7FA" BorderColor="#D9E2EC" CornerRadius="18" Padding="20">
+            <Frame BackgroundColor="{StaticResource SurfaceAlt}" BorderColor="{StaticResource BorderStrong}" CornerRadius="18" Padding="20">
                 <VerticalStackLayout Spacing="12">
-                    <Label FontAttributes="Bold" FontSize="20" Text="Operazioni disponibili" />
-                    <Button Command="{Binding ShowTripsCommand}" Text="Apri lista viaggi" />
-                    <Button Command="{Binding CreateTripCommand}" Text="Crea nuovo viaggio" />
+                    <Label Style="{StaticResource SectionLabel}" Text="OPERAZIONI DISPONIBILI" />
+                    <Button Command="{Binding ShowTripsCommand}" Text="APRI LISTA VIAGGI" />
+                    <Button Command="{Binding CreateTripCommand}" Text="CREA NUOVO VIAGGIO" />
                 </VerticalStackLayout>
             </Frame>
         </VerticalStackLayout>

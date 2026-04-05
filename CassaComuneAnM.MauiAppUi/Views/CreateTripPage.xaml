@@ -7,35 +7,44 @@
     Title="Nuovo viaggio">
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="14">
+            <Label Style="{StaticResource HeroLabel}" FontSize="24" Text="NUOVO VIAGGIO" />
+            <Label Style="{StaticResource MutedLabel}" Text="COMPILA I DATI PRINCIPALI E PREPARA I PARTECIPANTI INIZIALI." />
             <Entry Placeholder="Nome viaggio" Text="{Binding TripName}" />
             <Entry Placeholder="Codice viaggio" Text="{Binding TripCode}" />
             <DatePicker Date="{Binding TripDate}" />
             <Entry Placeholder="Nome coordinatore" Text="{Binding CoordinatorName}" />
             <Entry Placeholder="Codice coordinatore" Text="{Binding CoordinatorCode}" />
             <Entry Placeholder="Nome cassiere" Text="{Binding CashierName}" />
-            <Entry Placeholder="Paese" Text="{Binding Country}" />
-            <Entry Placeholder="Valuta" Text="{Binding Currency}" />
-            <Entry Keyboard="Numeric" Placeholder="Tasso di cambio" Text="{Binding ExchangeRate}" />
-            <Entry Keyboard="Numeric" Placeholder="Budget iniziale per partecipante" Text="{Binding BudgetPerPax}" />
+            <Entry Placeholder="Paese del viaggio" Text="{Binding Country}" />
+            <Picker
+                Title="Seleziona valuta locale del viaggio"
+                ItemsSource="{Binding SupportedCurrencies}"
+                SelectedItem="{Binding SelectedCurrency}" />
+            <Entry Keyboard="Numeric" Placeholder="{Binding ExchangeRatePlaceholder}" Text="{Binding ExchangeRateInput}" />
+            <Label Style="{StaticResource MutedLabel}" Text="INSERISCI QUANTA VALUTA LOCALE CORRISPONDE A 1 EUR. ESEMPIO: USD 1,10 SIGNIFICA CHE 1 EUR VALE 1,10 USD." />
+            <Entry Keyboard="Numeric" Placeholder="Budget base in EUR per ciascun partecipante del viaggio" Text="{Binding BudgetPerPaxInput}" />
+            <Label Style="{StaticResource MutedLabel}" Text="QUESTO È IL BUDGET STANDARD CHE IL SISTEMA APPLICA AI PARTECIPANTI, SALVO OVERRIDE MANUALE." />
 
-            <Frame Padding="16">
+            <Frame Padding="16" BackgroundColor="{StaticResource SurfaceAlt}" BorderColor="{StaticResource BorderStrong}">
                 <VerticalStackLayout Spacing="10">
-                    <Label FontAttributes="Bold" FontSize="18" Text="Partecipanti iniziali" />
+                    <Label Style="{StaticResource SectionLabel}" Text="PARTECIPANTI INIZIALI" />
                     <Entry Placeholder="Nome partecipante" Text="{Binding ParticipantName}" />
-                    <Entry Keyboard="Numeric" Placeholder="Budget personale" Text="{Binding ParticipantBudget}" />
-                    <Button Command="{Binding AddParticipantCommand}" Text="Aggiungi partecipante" />
+                    <Entry Keyboard="Numeric" Placeholder="Budget personale in EUR del singolo partecipante, vuoto = usa il budget base" Text="{Binding ParticipantBudgetInput}" />
+                    <Label Style="{StaticResource MutedLabel}" Text="USA QUESTO CAMPO SOLO SE QUEL PARTECIPANTE DEVE AVERE UN BUDGET DIVERSO DAL BUDGET BASE DEL VIAGGIO." />
+                    <Button Command="{Binding AddParticipantCommand}" IsEnabled="{Binding IsNotBusy}" Text="AGGIUNGI PARTECIPANTE" />
 
                     <CollectionView EmptyView="Nessun partecipante iniziale." ItemsSource="{Binding Participants}">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Frame Margin="0,0,0,10" Padding="12">
+                                <Frame Margin="0,0,0,10" Padding="12" BackgroundColor="{StaticResource Surface}">
                                     <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-                                        <Label FontAttributes="Bold" Text="{Binding Name}" />
+                                        <Label Style="{StaticResource CardTitleLabel}" FontSize="15" Text="{Binding Name, Converter={StaticResource UppercaseConverter}}" />
                                         <Button
                                             Grid.Column="1"
                                             Command="{Binding Source={x:Reference CreateTripRoot}, Path=BindingContext.RemoveParticipantCommand}"
                                             CommandParameter="{Binding .}"
-                                            Text="Rimuovi" />
+                                            IsEnabled="{Binding Source={x:Reference CreateTripRoot}, Path=BindingContext.IsNotBusy}"
+                                            Text="RIMUOVI" />
                                         <Label Grid.Row="1" Text="{Binding PersonalBudget, StringFormat='Budget: EUR {0:F2}'}" />
                                     </Grid>
                                 </Frame>
@@ -45,7 +54,8 @@
                 </VerticalStackLayout>
             </Frame>
 
-            <Button Command="{Binding SaveTripCommand}" Text="Salva viaggio" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+            <Button Command="{Binding SaveTripCommand}" IsEnabled="{Binding IsNotBusy}" Text="SALVA VIAGGIO" />
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>
