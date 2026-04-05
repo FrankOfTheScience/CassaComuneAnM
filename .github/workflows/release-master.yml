@@ -51,7 +51,7 @@ jobs:
         run: dotnet restore CassaComuneAnM.MauiAppUi/CassaComuneAnM.MauiAppUi.csproj
 
       - name: Build MAUI
-        run: dotnet build CassaComuneAnM.MauiAppUi/CassaComuneAnM.MauiAppUi.csproj -c Release --no-restore
+        run: dotnet build CassaComuneAnM.MauiAppUi/CassaComuneAnM.MauiAppUi.csproj -c Release --no-restore -p:RuntimeIdentifier=android-arm64
 
       - name: Publish Android APK
         run: |
