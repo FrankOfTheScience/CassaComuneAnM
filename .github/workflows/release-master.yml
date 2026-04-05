@@ -47,22 +47,22 @@ jobs:
       # -----------------------
       # BUILD ANDROID (SOLO MAUI)
       # -----------------------
-      - name: Restore
-        run: dotnet restore CassaComuneAnM.sln -p:CI_ANDROID_BUILD=true -p:RuntimeIdentifier=android-arm64
+      - name: Restore Core projects for Android
+        run: |
+          dotnet restore CassaComuneAnM.Core/CassaComuneAnM.Core.csproj -p:CI_ANDROID_BUILD=true -p:RuntimeIdentifier=android-arm64
+          dotnet restore CassaComuneAnm.Application/CassaComuneAnm.Application.csproj -p:CI_ANDROID_BUILD=true -p:RuntimeIdentifier=android-arm64
+          dotnet restore CassaComuneAnM.Infrastructure/CassaComuneAnM.Infrastructure.csproj -p:CI_ANDROID_BUILD=true -p:RuntimeIdentifier=android-arm64
+          dotnet restore CassaComuneAnM.MauiAppUi/CassaComuneAnM.MauiAppUi.csproj -p:CI_ANDROID_BUILD=true -p:RuntimeIdentifier=android-arm64
 
-      - name: Build
-        run: dotnet build CassaComuneAnM.sln -c Release --no-restore -p:CI_ANDROID_BUILD=true -p:RuntimeIdentifier=android-arm64
+      - name: Build Core projects for Android
+        run: |
+          dotnet build CassaComuneAnM.Core/CassaComuneAnM.Core.csproj -c Release -p:CI_ANDROID_BUILD=true -p:RuntimeIdentifier=android-arm64
+          dotnet build CassaComuneAnm.Application/CassaComuneAnm.Application.csproj -c Release -p:CI_ANDROID_BUILD=true -p:RuntimeIdentifier=android-arm64
+          dotnet build CassaComuneAnM.Infrastructure/CassaComuneAnM.Infrastructure.csproj -c Release -p:CI_ANDROID_BUILD=true -p:RuntimeIdentifier=android-arm64
+          dotnet build CassaComuneAnM.MauiAppUi/CassaComuneAnM.MauiAppUi.csproj -c Release -p:CI_ANDROID_BUILD=true -p:RuntimeIdentifier=android-arm64
 
       - name: Publish Android APK
-        run: |
-          dotnet publish CassaComuneAnM.MauiAppUi/CassaComuneAnM.MauiAppUi.csproj \
-            -f net8.0-android \
-            -c Release \
-            --no-restore \
-            -p:CI_ANDROID_BUILD=true \
-            -p:RuntimeIdentifier=android-arm64 \
-            -p:AndroidPackageFormat=apk \
-            -o ./artifacts
+        run: dotnet publish CassaComuneAnM.MauiAppUi/CassaComuneAnM.MauiAppUi.csproj -f net8.0-android -c Release --no-restore -p:CI_ANDROID_BUILD=true -p:RuntimeIdentifier=android-arm64 -p:AndroidPackageFormat=apk -o ./artifacts
 
       # -----------------------
       # ARTIFACT
