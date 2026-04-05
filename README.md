@@ -57,6 +57,23 @@ La pipeline GitHub su `master` esegue:
 - upload artifact
 - creazione GitHub Release con changelog automatico e allegato APK
 
+## Download applicazione
+
+Per installare l'applicazione distribuita:
+
+1. vai nella sezione [GitHub Releases](https://github.com/FrankOfTheScience/CassaComuneAnM/releases)
+2. apri l'ultima release stabile
+3. scarica l'asset disponibile:
+   - `APK`, se vuoi installare l'app Android
+   - eventuale `ZIP`, se la release contiene anche un pacchetto desktop
+4. se hai scaricato uno `ZIP`, estrailo in una cartella locale
+5. se hai scaricato un `APK`, trasferiscilo sul dispositivo Android e installalo
+
+Note pratiche:
+
+- su Android potresti dover abilitare temporaneamente l'installazione da sorgenti esterne
+- su desktop, se la release contiene uno zip applicativo, apri la cartella estratta e avvia l'eseguibile incluso
+
 ## Branching
 
 - `dev`: integrazione continua
