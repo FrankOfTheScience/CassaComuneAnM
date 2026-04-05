@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using CassaComuneAnM.MauiAppUi.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CassaComuneAnM.MauiAppUi.ViewModels;
 
@@ -51,24 +53,37 @@ public abstract class BaseViewModel : INotifyPropertyChanged
 
     protected INavigation? Navigation => Application.Current?.MainPage?.Navigation;
 
+    private IAppDialogService? DialogService =>
+        Application.Current?.Handler?.MauiContext?.Services.GetService<IAppDialogService>();
+
     protected Task ShowAlertAsync(string title, string message)
     {
-        if (Application.Current?.MainPage is null)
+        if (DialogService is null)
         {
             return Task.CompletedTask;
         }
 
-        return Application.Current.MainPage.DisplayAlert(title, message, "OK");
+        return DialogService.ShowAlertAsync(title, message);
     }
 
     protected Task<bool> ShowConfirmAsync(string title, string message)
     {
-        if (Application.Current?.MainPage is null)
+        if (DialogService is null)
         {
             return Task.FromResult(false);
         }
 
-        return Application.Current.MainPage.DisplayAlert(title, message, "Si", "No");
+        return DialogService.ShowConfirmAsync(title, message);
+    }
+
+    protected Task<T?> ShowSelectionAsync<T>(string title, string message, IReadOnlyList<T> items, Func<T, string> labelSelector, T? selected = default)
+    {
+        if (DialogService is null)
+        {
+            return Task.FromResult<T?>(default);
+        }
+
+        return DialogService.ShowSelectionAsync(title, message, items, labelSelector, selected);
     }
 
     protected async Task RunBusyAsync(Func<Task> action, string errorTitle = "Errore")

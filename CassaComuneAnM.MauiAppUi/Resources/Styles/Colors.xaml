@@ -12,6 +12,8 @@
     <Color x:Key="InkMuted">#5E6661</Color>
     <Color x:Key="Border">#D7E6DA</Color>
     <Color x:Key="BorderStrong">#99BCA0</Color>
+    <Color x:Key="Danger">#B3261E</Color>
+    <Color x:Key="DangerSoft">#FDECEA</Color>
     <Color x:Key="White">#FFFFFF</Color>
     <Color x:Key="Black">#242626</Color>
 
@@ -23,4 +25,6 @@
     <SolidColorBrush x:Key="InkMutedBrush" Color="{StaticResource InkMuted}" />
     <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource Border}" />
     <SolidColorBrush x:Key="BorderStrongBrush" Color="{StaticResource BorderStrong}" />
+    <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource Danger}" />
+    <SolidColorBrush x:Key="DangerSoftBrush" Color="{StaticResource DangerSoft}" />
 </ResourceDictionary>

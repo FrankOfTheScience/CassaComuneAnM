@@ -6,14 +6,11 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:converters="clr-namespace:CassaComuneAnM.MauiAppUi.Converters"
     Title="Viaggi">
-    <ContentPage.ToolbarItems>
-        <ToolbarItem Command="{Binding CreateTripCommand}" Text="NUOVO" />
-    </ContentPage.ToolbarItems>
-
-    <Grid Padding="20" RowDefinitions="Auto,*" RowSpacing="18">
+    <Grid Padding="{OnIdiom Phone='16', Tablet='24'}" RowDefinitions="Auto,*" RowSpacing="18" MaximumWidthRequest="760" HorizontalOptions="Center">
         <VerticalStackLayout Spacing="8">
             <Label Style="{StaticResource HeroLabel}" FontSize="24" Text="VIAGGI" />
             <Label Style="{StaticResource MutedLabel}" Text="ARCHIVIO DEI VIAGGI GESTITI DALLA CASSA COMUNE." />
+            <Button Command="{Binding CreateTripCommand}" HorizontalOptions="Start" Style="{StaticResource SecondaryButton}" Text="NUOVO VIAGGIO" />
         </VerticalStackLayout>
 
         <CollectionView Grid.Row="1" EmptyView="Nessun viaggio salvato." ItemsSource="{Binding Trips}">

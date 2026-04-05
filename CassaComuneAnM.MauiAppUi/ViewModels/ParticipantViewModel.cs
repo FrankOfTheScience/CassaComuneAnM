@@ -1,5 +1,6 @@
 using CassaComuneAnm.Application.Interfaces;
 using CassaComuneAnM.Core.Entities;
+using CassaComuneAnM.MauiAppUi.Services;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 
@@ -13,7 +14,7 @@ public class ParticipantViewModel : BaseViewModel
     private string _participantName = string.Empty;
     private string _personalBudgetInput = string.Empty;
 
-    public ObservableCollection<Participant> Participants { get; } = new();
+    public ObservableCollection<ParticipantListItemViewModel> Participants { get; } = new();
 
     public string ParticipantName
     {
@@ -42,7 +43,7 @@ public class ParticipantViewModel : BaseViewModel
         Title = "Partecipanti";
 
         AddParticipantCommand = new Command(async () => await AddParticipantAsync());
-        RemoveParticipantCommand = new Command<Participant>(async participant => await RemoveParticipantAsync(participant));
+        RemoveParticipantCommand = new Command<ParticipantListItemViewModel>(async participant => await RemoveParticipantAsync(participant));
     }
 
     public async Task LoadAsync()
@@ -58,7 +59,13 @@ public class ParticipantViewModel : BaseViewModel
 
         foreach (var participant in _trip.Participants.OrderBy(p => p.Name))
         {
-            Participants.Add(participant);
+            Participants.Add(new ParticipantListItemViewModel
+            {
+                Name = participant.Name,
+                ParticipantName = participant.Name,
+                BudgetPrimaryDisplay = CurrencyDisplayService.FormatPrimaryAmount(participant.PersonalBudget, _trip),
+                BudgetSecondaryDisplay = CurrencyDisplayService.FormatSecondaryEurAmount(participant.PersonalBudget, _trip)
+            });
         }
     }
 
@@ -109,7 +116,7 @@ public class ParticipantViewModel : BaseViewModel
         });
     }
 
-    private async Task RemoveParticipantAsync(Participant? participant)
+    private async Task RemoveParticipantAsync(ParticipantListItemViewModel? participant)
     {
         if (participant is null)
         {
@@ -124,7 +131,7 @@ public class ParticipantViewModel : BaseViewModel
 
         await RunBusyAsync(async () =>
         {
-            await _tripService.RemoveParticipantAsync(_tripCode, participant.Name);
+            await _tripService.RemoveParticipantAsync(_tripCode, participant.ParticipantName);
             await LoadAsync();
         });
     }

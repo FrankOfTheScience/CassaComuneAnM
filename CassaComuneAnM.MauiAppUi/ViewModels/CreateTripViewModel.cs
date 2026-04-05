@@ -1,6 +1,7 @@
 using CassaComuneAnm.Application.Interfaces;
 using CassaComuneAnM.Core.Entities;
 using CassaComuneAnM.Core.Enums;
+using CassaComuneAnM.MauiAppUi.Services;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 
@@ -23,7 +24,7 @@ public class CreateTripViewModel : BaseViewModel
     private string _participantBudgetInput = string.Empty;
 
     public ObservableCollection<InitialParticipantViewModel> Participants { get; } = new();
-    public IReadOnlyList<CurrencyCode> SupportedCurrencies { get; } = Enum.GetValues<CurrencyCode>();
+    public IReadOnlyList<CurrencyOption> CurrencyOptions { get; } = CurrencyCatalog.All;
 
     public string TripName
     {
@@ -74,7 +75,9 @@ public class CreateTripViewModel : BaseViewModel
         {
             if (SetProperty(ref _selectedCurrency, value))
             {
+                OnPropertyChanged(nameof(SelectedCurrencyLabel));
                 OnPropertyChanged(nameof(ExchangeRatePlaceholder));
+                OnPropertyChanged(nameof(ExchangeRateHelpText));
             }
         }
     }
@@ -103,6 +106,11 @@ public class CreateTripViewModel : BaseViewModel
         set => SetProperty(ref _participantBudgetInput, value);
     }
 
+    public string SelectedCurrencyLabel =>
+        SelectedCurrency.HasValue
+            ? CurrencyCatalog.GetDisplayLabel(SelectedCurrency.Value)
+            : "SELEZIONA VALUTA LOCALE DEL VIAGGIO";
+
     public string ExchangeRatePlaceholder =>
         SelectedCurrency switch
         {
@@ -111,9 +119,13 @@ public class CreateTripViewModel : BaseViewModel
             _ => $"Cambio contro EUR, es. {SelectedCurrency} 1,10 = 1 EUR vale 1,10 {SelectedCurrency}"
         };
 
+    public string ExchangeRateHelpText =>
+        CurrencyDisplayService.BuildExchangeRateHelp(SelectedCurrency ?? CurrencyCode.USD);
+
     public ICommand SaveTripCommand { get; }
     public ICommand AddParticipantCommand { get; }
     public ICommand RemoveParticipantCommand { get; }
+    public ICommand SelectCurrencyCommand { get; }
 
     public CreateTripViewModel(ITripService tripService)
     {
@@ -122,6 +134,7 @@ public class CreateTripViewModel : BaseViewModel
         SaveTripCommand = new Command(async () => await SaveTripAsync());
         AddParticipantCommand = new Command(AddParticipant);
         RemoveParticipantCommand = new Command<InitialParticipantViewModel>(RemoveParticipant);
+        SelectCurrencyCommand = new Command(async () => await SelectCurrencyAsync());
     }
 
     private void AddParticipant()
@@ -156,6 +169,21 @@ public class CreateTripViewModel : BaseViewModel
         }
 
         Participants.Remove(participant);
+    }
+
+    private async Task SelectCurrencyAsync()
+    {
+        var selected = await ShowSelectionAsync(
+            "Valuta del viaggio",
+            "Scegli il currency code ISO e il nome italiano della valuta locale del viaggio.",
+            CurrencyOptions,
+            option => option.Label,
+            CurrencyOptions.FirstOrDefault(option => option.Code == SelectedCurrency));
+
+        if (selected is not null)
+        {
+            SelectedCurrency = selected.Code;
+        }
     }
 
     private async Task SaveTripAsync()
@@ -257,7 +285,7 @@ public class CreateTripViewModel : BaseViewModel
             return true;
         }
 
-        errorMessage = "Inserisci il valore della valuta locale corrispondente a 1 EUR. Esempio: USD 1,10 significa che 1 EUR vale 1,10 USD.";
+        errorMessage = "Inserisci quanta valuta locale corrisponde a 1 EUR. Esempio: USD 1,10 significa che 1 EUR vale 1,10 USD.";
         return false;
     }
 }

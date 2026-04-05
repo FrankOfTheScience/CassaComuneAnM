@@ -1,4 +1,7 @@
 using CassaComuneAnm.Application.Interfaces;
+using CassaComuneAnM.Core.Entities;
+using CassaComuneAnM.Core.Enums;
+using CassaComuneAnM.MauiAppUi.Services;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 
@@ -8,8 +11,10 @@ public class ExpenseViewModel : BaseViewModel
 {
     private readonly ITripService _tripService;
     private readonly string _tripCode;
+    private Trip? _trip;
     private string _helperText = "Seleziona chi non beneficia della spesa. Se non selezioni nessuno, la spesa viene ripartita su tutto il gruppo.";
     private string _description = string.Empty;
+    private CurrencyCode _selectedInputCurrency = CurrencyCode.EUR;
     private string _amountInput = string.Empty;
     private DateTime _expenseDate = DateTime.Today;
     private bool _tourLeaderFree;
@@ -29,6 +34,26 @@ public class ExpenseViewModel : BaseViewModel
             {
                 UpdateHelperText();
             }
+        }
+    }
+
+    public CurrencyCode SelectedInputCurrency
+    {
+        get => _selectedInputCurrency;
+        set
+        {
+            if (_selectedInputCurrency == value)
+            {
+                return;
+            }
+
+            var previous = _selectedInputCurrency;
+            _selectedInputCurrency = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SelectedInputCurrencyLabel));
+            OnPropertyChanged(nameof(AmountPlaceholder));
+            ConvertAmountInputBetweenModes(previous, value);
+            UpdateHelperText();
         }
     }
 
@@ -80,10 +105,26 @@ public class ExpenseViewModel : BaseViewModel
         set => SetProperty(ref _isEditing, value);
     }
 
+    public string SelectedInputCurrencyLabel =>
+        _trip is null
+            ? "INSERIMENTO IN EUR"
+            : CurrencyDisplayService.FormatInputModeLabel(SelectedInputCurrency, _trip);
+
+    public string AmountPlaceholder =>
+        SelectedInputCurrency == CurrencyCode.EUR
+            ? "Importo spesa in EUR"
+            : $"Importo spesa in {SelectedInputCurrency}";
+
+    public IReadOnlyList<CurrencyOption> InputCurrencyOptions =>
+        _trip is null
+            ? new[] { new CurrencyOption(CurrencyCode.EUR, CurrencyCatalog.GetItalianName(CurrencyCode.EUR)) }
+            : CurrencyDisplayService.GetInputOptions(_trip);
+
     public ICommand AddExpenseCommand { get; }
     public ICommand DeleteExpenseCommand { get; }
     public ICommand StartEditExpenseCommand { get; }
     public ICommand CancelEditCommand { get; }
+    public ICommand SelectInputCurrencyCommand { get; }
 
     public ExpenseViewModel(ITripService tripService, string tripCode)
     {
@@ -94,22 +135,23 @@ public class ExpenseViewModel : BaseViewModel
         DeleteExpenseCommand = new Command<ExpenseHistoryItemViewModel>(async expense => await DeleteExpenseAsync(expense));
         StartEditExpenseCommand = new Command<ExpenseHistoryItemViewModel>(StartEditExpense);
         CancelEditCommand = new Command(CancelEdit);
+        SelectInputCurrencyCommand = new Command(async () => await SelectInputCurrencyAsync());
     }
 
     public async Task LoadAsync()
     {
-        var trip = await _tripService.GetTripByCodeAsync(_tripCode);
+        _trip = await _tripService.GetTripByCodeAsync(_tripCode);
         var expenses = await _tripService.GetExpensesAsync(_tripCode);
 
         Participants.Clear();
         Expenses.Clear();
 
-        if (trip is null)
+        if (_trip is null)
         {
             return;
         }
 
-        foreach (var participant in trip.Participants.OrderBy(p => p.Name))
+        foreach (var participant in _trip.Participants.OrderBy(p => p.Name))
         {
             var selectable = new SelectableParticipantViewModel { Name = participant.Name };
             selectable.PropertyChanged += (_, args) =>
@@ -137,41 +179,79 @@ public class ExpenseViewModel : BaseViewModel
                 Id = expense.Id,
                 Date = expense.Date,
                 Description = expense.Description,
-                Amount = expense.Amount,
+                AmountInEur = expense.Amount,
+                AmountPrimaryDisplay = CurrencyDisplayService.FormatPrimaryAmount(expense.Amount, _trip),
+                AmountSecondaryDisplay = CurrencyDisplayService.FormatSecondaryEurAmount(expense.Amount, _trip),
                 BeneficiariesText = beneficiaries.Count > 0 ? string.Join(", ", beneficiaries) : "N/D"
             });
+        }
+
+        UpdateHelperText();
+    }
+
+    private async Task SelectInputCurrencyAsync()
+    {
+        if (_trip is null)
+        {
+            return;
+        }
+
+        var selected = await ShowSelectionAsync(
+            "Valuta di inserimento",
+            "Puoi registrare la spesa in EUR oppure nella valuta del viaggio. Il sistema salva in EUR e converte automaticamente.",
+            InputCurrencyOptions,
+            option => option.Label,
+            InputCurrencyOptions.FirstOrDefault(option => option.Code == SelectedInputCurrency));
+
+        if (selected is not null)
+        {
+            SelectedInputCurrency = selected.Code;
         }
     }
 
     private async Task AddExpenseAsync()
     {
+        if (_trip is null)
+        {
+            await ShowAlertAsync("Viaggio non trovato", "Impossibile caricare il viaggio.");
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(Description))
         {
             await ShowAlertAsync("Descrizione mancante", "Inserisci la descrizione della spesa.");
             return;
         }
 
-        if (!TryParseDecimalInput(AmountInput, out var amount) || amount <= 0)
+        if (!TryParseDecimalInput(AmountInput, out var inputAmount) || inputAmount <= 0)
         {
             await ShowAlertAsync("Importo non valido", "Inserisci un importo maggiore di zero.");
             return;
         }
 
+        var amountInEur = CurrencyDisplayService.ConvertInputToEur(inputAmount, SelectedInputCurrency, _trip);
         var excludedNames = Participants.Where(p => p.IsSelected).Select(p => p.Name).ToList();
 
         await RunBusyAsync(async () =>
         {
             if (_editingExpenseId.HasValue)
             {
-                await _tripService.UpdateExpenseAsync(_tripCode, _editingExpenseId.Value, ExpenseDate, Description.Trim(), amount, TourLeaderFree, excludedNames);
+                await _tripService.UpdateExpenseAsync(_tripCode, _editingExpenseId.Value, ExpenseDate, Description.Trim(), amountInEur, TourLeaderFree, excludedNames);
             }
             else
             {
-                await _tripService.AddExpenseAsync(_tripCode, ExpenseDate, Description.Trim(), amount, TourLeaderFree, excludedNames);
+                await _tripService.AddExpenseAsync(_tripCode, ExpenseDate, Description.Trim(), amountInEur, TourLeaderFree, excludedNames);
             }
 
             CancelEdit();
             await LoadAsync();
+
+            if (_trip?.CashBalance < 0m)
+            {
+                await ShowAlertAsync(
+                    "Cassa in negativo",
+                    $"La spesa è stata registrata, ma il saldo cassa è ora negativo di {CurrencyDisplayService.FormatAmountWithEur(Math.Abs(_trip.CashBalance), _trip)}. Registra o copri il disavanzo il prima possibile.");
+            }
         });
     }
 
@@ -182,7 +262,7 @@ public class ExpenseViewModel : BaseViewModel
             return;
         }
 
-        var confirmed = await ShowConfirmAsync("Elimina spesa", $"Vuoi eliminare '{expense.Description}'?");
+        var confirmed = await ShowConfirmAsync("Elimina spesa", $"Vuoi eliminare '{expense.Description}' pari a {expense.AmountPrimaryDisplay}{expense.AmountSecondaryDisplay}?");
         if (!confirmed)
         {
             return;
@@ -204,7 +284,8 @@ public class ExpenseViewModel : BaseViewModel
 
         _editingExpenseId = expense.Id;
         Description = expense.Description;
-        AmountInput = FormatDecimalInput(expense.Amount, "0.00##");
+        SelectedInputCurrency = CurrencyCode.EUR;
+        AmountInput = FormatDecimalInput(expense.AmountInEur, "0.00##");
         ExpenseDate = expense.Date;
         TourLeaderFree = expense.Description.Contains("TL Free", StringComparison.OrdinalIgnoreCase);
         SubmitButtonText = "Salva modifiche";
@@ -224,6 +305,7 @@ public class ExpenseViewModel : BaseViewModel
     {
         _editingExpenseId = null;
         Description = string.Empty;
+        SelectedInputCurrency = CurrencyCode.EUR;
         AmountInput = string.Empty;
         ExpenseDate = DateTime.Today;
         TourLeaderFree = false;
@@ -244,7 +326,7 @@ public class ExpenseViewModel : BaseViewModel
         var excludedCount = Participants.Count(p => p.IsSelected);
         var beneficiaries = Math.Max(0, participantCount - excludedCount);
 
-        if (participantCount == 0)
+        if (_trip is null || participantCount == 0)
         {
             HelperText = "Aggiungi prima dei partecipanti al viaggio per poter registrare una spesa.";
             return;
@@ -256,10 +338,32 @@ public class ExpenseViewModel : BaseViewModel
             return;
         }
 
-        var amountPerHead = TryParseDecimalInput(AmountInput, out var amount) && amount > 0
-            ? amount / participantCount
-            : 0m;
+        if (!TryParseDecimalInput(AmountInput, out var inputAmount) || inputAmount <= 0)
+        {
+            HelperText = "Inserisci l'importo in EUR o nella valuta del viaggio. Il sistema converte e salva sempre in EUR.";
+            return;
+        }
+
+        var amountInEur = CurrencyDisplayService.ConvertInputToEur(inputAmount, SelectedInputCurrency, _trip);
+        var amountPerHead = amountInEur / participantCount;
         var tlSuffix = TourLeaderFree ? " Modalità tour leader gratuito attiva." : string.Empty;
-        HelperText = $"Beneficiari: {beneficiaries}/{participantCount}. Quota base per testa: EUR {amountPerHead:F2}.{tlSuffix}";
+        HelperText =
+            $"Importo registrato: {CurrencyDisplayService.FormatAmountWithEur(amountInEur, _trip)}. " +
+            $"Beneficiari: {beneficiaries}/{participantCount}. Quota base per testa: {CurrencyDisplayService.FormatAmountWithEur(amountPerHead, _trip)}.{tlSuffix}";
+    }
+
+    private void ConvertAmountInputBetweenModes(CurrencyCode previousCurrency, CurrencyCode newCurrency)
+    {
+        if (_trip is null || !TryParseDecimalInput(AmountInput, out var currentAmount) || currentAmount <= 0 || previousCurrency == newCurrency)
+        {
+            return;
+        }
+
+        var amountInEur = CurrencyDisplayService.ConvertInputToEur(currentAmount, previousCurrency, _trip);
+        var converted = newCurrency == CurrencyCode.EUR
+            ? amountInEur
+            : CurrencyDisplayService.ConvertEurToTripCurrency(amountInEur, _trip);
+
+        AmountInput = FormatDecimalInput(converted, "0.00##");
     }
 }

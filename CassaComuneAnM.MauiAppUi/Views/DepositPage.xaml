@@ -6,23 +6,42 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Versamenti">
     <ScrollView>
-        <VerticalStackLayout Padding="20" Spacing="18">
+        <VerticalStackLayout Padding="{OnIdiom Phone='16', Tablet='24'}" Spacing="18" MaximumWidthRequest="760" HorizontalOptions="Center">
             <Label Style="{StaticResource HeroLabel}" FontSize="24" Text="VERSAMENTI" />
             <Label Style="{StaticResource MutedLabel}" Text="TIENI TRACCIA DEGLI IMPORTI VERSATI E DEL RESIDUO DISPONIBILE." />
 
             <Frame Padding="16" BackgroundColor="{StaticResource SurfaceAlt}" BorderColor="{StaticResource BorderStrong}">
                 <VerticalStackLayout Spacing="10">
-                    <Picker
-                        ItemDisplayBinding="{Binding Name}"
-                        ItemsSource="{Binding Participants}"
-                        Title="Seleziona il partecipante che versa"
-                        SelectedItem="{Binding SelectedParticipant}" />
-                    <Entry Keyboard="Numeric" Placeholder="Importo versamento in EUR" Text="{Binding AmountInput}" />
+                    <Border Style="{StaticResource FieldShell}">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                            <Label Style="{StaticResource FieldLabel}" Text="PARTECIPANTE" />
+                            <Label Grid.Row="1" Text="{Binding SelectedParticipantLabel}" />
+                            <Button
+                                Grid.Column="1"
+                                Grid.RowSpan="2"
+                                Command="{Binding SelectParticipantCommand}"
+                                Style="{StaticResource SecondaryButton}"
+                                Text="SCEGLI" />
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource FieldShell}">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                            <Label Style="{StaticResource FieldLabel}" Text="VALUTA INSERIMENTO" />
+                            <Label Grid.Row="1" Text="{Binding SelectedInputCurrencyLabel}" />
+                            <Button
+                                Grid.Column="1"
+                                Grid.RowSpan="2"
+                                Command="{Binding SelectInputCurrencyCommand}"
+                                Style="{StaticResource SecondaryButton}"
+                                Text="CAMBIA" />
+                        </Grid>
+                    </Border>
+                    <Entry Keyboard="Numeric" Placeholder="{Binding AmountPlaceholder}" Text="{Binding AmountInput}" />
                     <Label FontSize="12" Text="{Binding BudgetPreviewText}" TextColor="#52606D" />
                     <DatePicker Date="{Binding DepositDate}" />
                     <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
                     <Button Command="{Binding AddDepositCommand}" IsEnabled="{Binding IsNotBusy}" Text="{Binding SubmitButtonText}" />
-                    <Button Command="{Binding CancelEditCommand}" IsEnabled="{Binding IsNotBusy}" IsVisible="{Binding IsEditing}" Text="ANNULLA MODIFICA" />
+                    <Button Command="{Binding CancelEditCommand}" IsEnabled="{Binding IsNotBusy}" IsVisible="{Binding IsEditing}" Style="{StaticResource TertiaryButton}" Text="ANNULLA MODIFICA" />
                 </VerticalStackLayout>
             </Frame>
 
@@ -34,17 +53,39 @@
                             <VerticalStackLayout Spacing="6">
                                 <Label Style="{StaticResource CardTitleLabel}" FontSize="15" Text="{Binding PayerName, Converter={StaticResource UppercaseConverter}}" />
                                 <Label Text="{Binding Date, StringFormat='Data: {0:dd/MM/yyyy}'}" />
-                                <Label Text="{Binding Amount, StringFormat='Importo: EUR {0:F2}'}" />
-                                <Label Text="{Binding RemainingBudget, StringFormat='Residuo: EUR {0:F2}'}" />
+                                <HorizontalStackLayout Spacing="0" FlexLayout.Wrap="Wrap">
+                                    <Label>
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="Importo: " FontAttributes="Bold" />
+                                                <Span Text="{Binding AmountPrimaryDisplay}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                    <Label Style="{StaticResource SecondaryValueLabel}" Text="{Binding AmountSecondaryDisplay}" />
+                                </HorizontalStackLayout>
+                                <HorizontalStackLayout Spacing="0" FlexLayout.Wrap="Wrap">
+                                    <Label>
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="Residuo: " FontAttributes="Bold" />
+                                                <Span Text="{Binding RemainingBudgetPrimaryDisplay}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                    <Label Style="{StaticResource SecondaryValueLabel}" Text="{Binding RemainingBudgetSecondaryDisplay}" />
+                                </HorizontalStackLayout>
                                 <Button
                                     Command="{Binding Source={x:Reference DepositRoot}, Path=BindingContext.StartEditDepositCommand}"
                                     CommandParameter="{Binding .}"
                                     IsEnabled="{Binding Source={x:Reference DepositRoot}, Path=BindingContext.IsNotBusy}"
+                                    Style="{StaticResource SecondaryButton}"
                                     Text="MODIFICA VERSAMENTO" />
                                 <Button
                                     Command="{Binding Source={x:Reference DepositRoot}, Path=BindingContext.DeleteDepositCommand}"
                                     CommandParameter="{Binding .}"
                                     IsEnabled="{Binding Source={x:Reference DepositRoot}, Path=BindingContext.IsNotBusy}"
+                                    Style="{StaticResource TertiaryButton}"
                                     Text="ELIMINA VERSAMENTO" />
                             </VerticalStackLayout>
                         </Frame>

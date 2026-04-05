@@ -3,6 +3,7 @@ using CassaComuneAnm.Application.Services;
 using CassaComuneAnM.Core.Entities;
 using CassaComuneAnM.Infrastructure.Data;
 using CassaComuneAnM.Infrastructure.Repositories;
+using CassaComuneAnM.MauiAppUi.Services;
 using CassaComuneAnM.MauiAppUi.ViewModels;
 using CassaComuneAnM.MauiAppUi.Views;
 using Microsoft.EntityFrameworkCore;
@@ -31,6 +32,7 @@ public static class MauiProgram
         builder.Services.AddScoped<IRepository<Expense>, EfRepository<Expense>>();
         builder.Services.AddScoped<IRepository<Deposit>, EfRepository<Deposit>>();
         builder.Services.AddScoped<ITripService, TripService>();
+        builder.Services.AddSingleton<IAppDialogService, AppDialogService>();
 
         builder.Services.AddTransient<MainPageViewModel>();
         builder.Services.AddTransient<CreateTripViewModel>();

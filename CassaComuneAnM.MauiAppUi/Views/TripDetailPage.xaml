@@ -4,16 +4,17 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Dettaglio viaggio">
-    <ContentPage.ToolbarItems>
-        <ToolbarItem Command="{Binding EditTripCommand}" IsEnabled="{Binding IsNotBusy}" Text="MODIFICA" />
-        <ToolbarItem Command="{Binding DeleteTripCommand}" IsEnabled="{Binding IsNotBusy}" Text="ELIMINA" />
-    </ContentPage.ToolbarItems>
     <ScrollView>
-        <VerticalStackLayout Padding="20" Spacing="16">
+        <VerticalStackLayout Padding="{OnIdiom Phone='16', Tablet='24'}" Spacing="16" MaximumWidthRequest="860" HorizontalOptions="Center">
             <Frame BackgroundColor="{StaticResource SurfaceAlt}" BorderColor="{StaticResource BorderStrong}" CornerRadius="20">
                 <VerticalStackLayout Spacing="8">
                     <Label Style="{StaticResource HeroLabel}" FontSize="24" Text="{Binding Trip.TripName, Converter={StaticResource UppercaseConverter}}" />
                     <BoxView HeightRequest="3" HorizontalOptions="Start" WidthRequest="72" Color="{StaticResource Primary}" />
+                    <Label Style="{StaticResource MutedLabel}" Text="{Binding CurrencySummary}" />
+                    <FlexLayout Direction="Row" Wrap="Wrap" JustifyContent="Start" AlignItems="Center">
+                        <Button Command="{Binding EditTripCommand}" IsEnabled="{Binding IsNotBusy}" Style="{StaticResource SecondaryButton}" Text="MODIFICA VIAGGIO" />
+                        <Button Command="{Binding DeleteTripCommand}" IsEnabled="{Binding IsNotBusy}" Style="{StaticResource TertiaryButton}" Text="ELIMINA VIAGGIO" />
+                    </FlexLayout>
                     <Entry IsVisible="{Binding IsEditingTrip}" Placeholder="Nome viaggio" Text="{Binding Trip.TripName}" />
                     <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.TripCode, StringFormat='Codice: {0}'}" />
                     <Entry IsVisible="{Binding IsEditingTrip}" Placeholder="Codice viaggio" Text="{Binding Trip.TripCode}" />
@@ -26,48 +27,66 @@
                     <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.Country, StringFormat='Paese: {0}'}" />
                     <Entry IsVisible="{Binding IsEditingTrip}" Placeholder="Paese" Text="{Binding Trip.Country}" />
                     <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.Currency, StringFormat='Valuta: {0}'}" />
-                    <Picker
-                        IsVisible="{Binding IsEditingTrip}"
-                        Title="Seleziona valuta locale del viaggio"
-                        ItemsSource="{Binding SupportedCurrencies}"
-                        SelectedItem="{Binding SelectedCurrency}" />
+                    <Border IsVisible="{Binding IsEditingTrip}" Style="{StaticResource FieldShell}">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                            <Label Style="{StaticResource FieldLabel}" Text="VALUTA LOCALE DEL VIAGGIO" />
+                            <Label Grid.Row="1" Text="{Binding SelectedCurrencyLabel}" />
+                            <Button
+                                Grid.Column="1"
+                                Grid.RowSpan="2"
+                                Command="{Binding SelectCurrencyCommand}"
+                                Style="{StaticResource SecondaryButton}"
+                                Text="SCEGLI" />
+                        </Grid>
+                    </Border>
                     <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.ExchangeRate, StringFormat='Cambio: {0:F4}'}" />
                     <Entry IsVisible="{Binding IsEditingTrip}" Keyboard="Numeric" Placeholder="{Binding ExchangeRatePlaceholder}" Text="{Binding ExchangeRateInput}" />
-                    <Label IsVisible="{Binding IsEditingTrip}" Style="{StaticResource MutedLabel}" Text="INSERISCI QUANTA VALUTA LOCALE CORRISPONDE A 1 EUR. ESEMPIO: USD 1,10 SIGNIFICA CHE 1 EUR VALE 1,10 USD." />
-                    <HorizontalStackLayout IsVisible="{Binding IsEditingTrip}" Spacing="12">
+                    <Label IsVisible="{Binding IsEditingTrip}" Style="{StaticResource MutedLabel}" Text="{Binding ExchangeRateHelpText}" />
+                    <FlexLayout IsVisible="{Binding IsEditingTrip}" Direction="Row" Wrap="Wrap" JustifyContent="Start" AlignItems="Center">
                         <Button Command="{Binding SaveTripCommand}" IsEnabled="{Binding IsNotBusy}" Text="SALVA VIAGGIO" />
-                        <Button Command="{Binding CancelTripEditCommand}" IsEnabled="{Binding IsNotBusy}" Text="ANNULLA" />
-                    </HorizontalStackLayout>
+                        <Button Command="{Binding CancelTripEditCommand}" IsEnabled="{Binding IsNotBusy}" Style="{StaticResource TertiaryButton}" Text="ANNULLA" />
+                    </FlexLayout>
                 </VerticalStackLayout>
             </Frame>
             <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
 
-            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
-                <Frame Grid.Column="0" Padding="14" BackgroundColor="{StaticResource SurfaceAlt}">
+            <FlexLayout Direction="Row" Wrap="Wrap" JustifyContent="SpaceBetween" AlignItems="Start">
+                <Frame Padding="14" BackgroundColor="{StaticResource SurfaceAlt}" WidthRequest="{OnIdiom Phone='320', Tablet='390'}">
                     <VerticalStackLayout>
                         <Label Style="{StaticResource SectionLabel}" FontSize="13" Text="BUDGET TOTALE" />
-                        <Label FontSize="20" Text="{Binding Trip.TotalBudget, StringFormat='EUR {0:F2}'}" />
+                        <Label FontSize="20" Text="{Binding TotalBudgetPrimaryDisplay}" />
+                        <Label Style="{StaticResource SecondaryValueLabel}" Text="{Binding TotalBudgetSecondaryDisplay}" />
                     </VerticalStackLayout>
                 </Frame>
-                <Frame Grid.Column="1" Padding="14" BackgroundColor="{StaticResource SurfaceAlt}">
+                <Frame Padding="14" BackgroundColor="{StaticResource SurfaceAlt}" WidthRequest="{OnIdiom Phone='320', Tablet='390'}">
                     <VerticalStackLayout>
                         <Label Style="{StaticResource SectionLabel}" FontSize="13" Text="VERSATO" />
-                        <Label FontSize="20" Text="{Binding Trip.TotalPaid, StringFormat='EUR {0:F2}'}" />
+                        <Label FontSize="20" Text="{Binding TotalPaidPrimaryDisplay}" />
+                        <Label Style="{StaticResource SecondaryValueLabel}" Text="{Binding TotalPaidSecondaryDisplay}" />
                     </VerticalStackLayout>
                 </Frame>
-                <Frame Grid.Row="1" Grid.Column="0" Padding="14" BackgroundColor="{StaticResource SurfaceAlt}">
+                <Frame Padding="14" BackgroundColor="{StaticResource SurfaceAlt}" WidthRequest="{OnIdiom Phone='320', Tablet='390'}">
                     <VerticalStackLayout>
                         <Label Style="{StaticResource SectionLabel}" FontSize="13" Text="SPESE" />
-                        <Label FontSize="20" Text="{Binding Trip.TotalExpenses, StringFormat='EUR {0:F2}'}" />
+                        <Label FontSize="20" Text="{Binding TotalExpensesPrimaryDisplay}" />
+                        <Label Style="{StaticResource SecondaryValueLabel}" Text="{Binding TotalExpensesSecondaryDisplay}" />
                     </VerticalStackLayout>
                 </Frame>
-                <Frame Grid.Row="1" Grid.Column="1" Padding="14" BackgroundColor="{StaticResource SurfaceAlt}">
+                <Frame Padding="14" BackgroundColor="{StaticResource SurfaceAlt}" WidthRequest="{OnIdiom Phone='320', Tablet='390'}">
                     <VerticalStackLayout>
                         <Label Style="{StaticResource SectionLabel}" FontSize="13" Text="SALDO CASSA" />
-                        <Label FontSize="20" Text="{Binding Trip.CashBalance, StringFormat='EUR {0:F2}'}" />
+                        <Label FontSize="20" Text="{Binding CashBalancePrimaryDisplay}" TextColor="{Binding CashBalanceColor}" />
+                        <Label Style="{StaticResource SecondaryValueLabel}" Text="{Binding CashBalanceSecondaryDisplay}" />
                     </VerticalStackLayout>
                 </Frame>
-            </Grid>
+            </FlexLayout>
+
+            <Frame IsVisible="{Binding IsCashBalanceNegative}" Style="{StaticResource DangerFrame}">
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource SectionLabel}" TextColor="{StaticResource Danger}" Text="ATTENZIONE CASSA IN NEGATIVO" />
+                    <Label Style="{StaticResource DangerLabel}" Text="{Binding CashDeficitWarningText}" />
+                </VerticalStackLayout>
+            </Frame>
 
             <Label Style="{StaticResource SectionLabel}" Text="SITUAZIONE CASSA" />
             <CollectionView EmptyView="Nessun partecipante." ItemsSource="{Binding ParticipantSummaries}">
@@ -76,9 +95,39 @@
                         <Frame Margin="0,0,0,12" Padding="14" BackgroundColor="{StaticResource SurfaceAlt}">
                             <VerticalStackLayout Spacing="4">
                                 <Label Style="{StaticResource CardTitleLabel}" FontSize="16" Text="{Binding Name, Converter={StaticResource UppercaseConverter}}" />
-                                <Label Text="{Binding PersonalBudget, StringFormat='Budget: EUR {0:F2}'}" />
-                                <Label Text="{Binding TotalPaid, StringFormat='Versato: EUR {0:F2}'}" />
-                                <Label Text="{Binding RemainingBudget, StringFormat='Residuo: EUR {0:F2}'}" />
+                                <HorizontalStackLayout Spacing="0" FlexLayout.Wrap="Wrap">
+                                    <Label>
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="Budget: " FontAttributes="Bold" />
+                                                <Span Text="{Binding PersonalBudgetPrimaryDisplay}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                    <Label Style="{StaticResource SecondaryValueLabel}" Text="{Binding PersonalBudgetSecondaryDisplay}" />
+                                </HorizontalStackLayout>
+                                <HorizontalStackLayout Spacing="0" FlexLayout.Wrap="Wrap">
+                                    <Label>
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="Versato: " FontAttributes="Bold" />
+                                                <Span Text="{Binding TotalPaidPrimaryDisplay}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                    <Label Style="{StaticResource SecondaryValueLabel}" Text="{Binding TotalPaidSecondaryDisplay}" />
+                                </HorizontalStackLayout>
+                                <HorizontalStackLayout Spacing="0" FlexLayout.Wrap="Wrap">
+                                    <Label>
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="Residuo: " FontAttributes="Bold" />
+                                                <Span Text="{Binding RemainingBudgetPrimaryDisplay}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                    <Label Style="{StaticResource SecondaryValueLabel}" Text="{Binding RemainingBudgetSecondaryDisplay}" />
+                                </HorizontalStackLayout>
                             </VerticalStackLayout>
                         </Frame>
                     </DataTemplate>

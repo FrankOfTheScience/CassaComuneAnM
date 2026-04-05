@@ -6,14 +6,26 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Spese">
     <ScrollView>
-        <VerticalStackLayout Padding="20" Spacing="18">
+        <VerticalStackLayout Padding="{OnIdiom Phone='16', Tablet='24'}" Spacing="18" MaximumWidthRequest="760" HorizontalOptions="Center">
             <Label Style="{StaticResource HeroLabel}" FontSize="24" Text="SPESE" />
             <Label Style="{StaticResource MutedLabel}" Text="REGISTRA, MODIFICA E CONTROLLA LE SPESE DEL VIAGGIO." />
 
             <Frame Padding="16" BackgroundColor="{StaticResource SurfaceAlt}" BorderColor="{StaticResource BorderStrong}">
                 <VerticalStackLayout Spacing="10">
                     <Entry Placeholder="Descrizione spesa" Text="{Binding Description}" />
-                    <Entry Keyboard="Numeric" Placeholder="Importo spesa in EUR" Text="{Binding AmountInput}" />
+                    <Border Style="{StaticResource FieldShell}">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                            <Label Style="{StaticResource FieldLabel}" Text="VALUTA INSERIMENTO" />
+                            <Label Grid.Row="1" Text="{Binding SelectedInputCurrencyLabel}" />
+                            <Button
+                                Grid.Column="1"
+                                Grid.RowSpan="2"
+                                Command="{Binding SelectInputCurrencyCommand}"
+                                Style="{StaticResource SecondaryButton}"
+                                Text="CAMBIA" />
+                        </Grid>
+                    </Border>
+                    <Entry Keyboard="Numeric" Placeholder="{Binding AmountPlaceholder}" Text="{Binding AmountInput}" />
                     <DatePicker Date="{Binding ExpenseDate}" />
                     <HorizontalStackLayout Spacing="12">
                         <CheckBox IsChecked="{Binding TourLeaderFree}" />
@@ -35,7 +47,7 @@
 
                     <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
                     <Button Command="{Binding AddExpenseCommand}" IsEnabled="{Binding IsNotBusy}" Text="{Binding SubmitButtonText}" />
-                    <Button Command="{Binding CancelEditCommand}" IsEnabled="{Binding IsNotBusy}" IsVisible="{Binding IsEditing}" Text="ANNULLA MODIFICA" />
+                    <Button Command="{Binding CancelEditCommand}" IsEnabled="{Binding IsNotBusy}" IsVisible="{Binding IsEditing}" Style="{StaticResource TertiaryButton}" Text="ANNULLA MODIFICA" />
                 </VerticalStackLayout>
             </Frame>
 
@@ -47,17 +59,29 @@
                             <VerticalStackLayout Spacing="6">
                                 <Label Style="{StaticResource CardTitleLabel}" FontSize="15" Text="{Binding Description, Converter={StaticResource UppercaseConverter}}" />
                                 <Label Text="{Binding Date, StringFormat='Data: {0:dd/MM/yyyy}'}" />
-                                <Label Text="{Binding Amount, StringFormat='Importo: EUR {0:F2}'}" />
+                                <HorizontalStackLayout Spacing="0" FlexLayout.Wrap="Wrap">
+                                    <Label>
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="Importo: " FontAttributes="Bold" />
+                                                <Span Text="{Binding AmountPrimaryDisplay}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                    <Label Style="{StaticResource SecondaryValueLabel}" Text="{Binding AmountSecondaryDisplay}" />
+                                </HorizontalStackLayout>
                                 <Label Text="{Binding BeneficiariesText, StringFormat='Beneficiari: {0}'}" />
                                 <Button
                                     Command="{Binding Source={x:Reference ExpenseRoot}, Path=BindingContext.StartEditExpenseCommand}"
                                     CommandParameter="{Binding .}"
                                     IsEnabled="{Binding Source={x:Reference ExpenseRoot}, Path=BindingContext.IsNotBusy}"
+                                    Style="{StaticResource SecondaryButton}"
                                     Text="MODIFICA SPESA" />
                                 <Button
                                     Command="{Binding Source={x:Reference ExpenseRoot}, Path=BindingContext.DeleteExpenseCommand}"
                                     CommandParameter="{Binding .}"
                                     IsEnabled="{Binding Source={x:Reference ExpenseRoot}, Path=BindingContext.IsNotBusy}"
+                                    Style="{StaticResource TertiaryButton}"
                                     Text="ELIMINA SPESA" />
                             </VerticalStackLayout>
                         </Frame>

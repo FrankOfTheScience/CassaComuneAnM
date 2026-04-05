@@ -6,7 +6,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Nuovo viaggio">
     <ScrollView>
-        <VerticalStackLayout Padding="20" Spacing="14">
+        <VerticalStackLayout Padding="{OnIdiom Phone='16', Tablet='24'}" Spacing="14" MaximumWidthRequest="760" HorizontalOptions="Center">
             <Label Style="{StaticResource HeroLabel}" FontSize="24" Text="NUOVO VIAGGIO" />
             <Label Style="{StaticResource MutedLabel}" Text="COMPILA I DATI PRINCIPALI E PREPARA I PARTECIPANTI INIZIALI." />
             <Entry Placeholder="Nome viaggio" Text="{Binding TripName}" />
@@ -16,12 +16,20 @@
             <Entry Placeholder="Codice coordinatore" Text="{Binding CoordinatorCode}" />
             <Entry Placeholder="Nome cassiere" Text="{Binding CashierName}" />
             <Entry Placeholder="Paese del viaggio" Text="{Binding Country}" />
-            <Picker
-                Title="Seleziona valuta locale del viaggio"
-                ItemsSource="{Binding SupportedCurrencies}"
-                SelectedItem="{Binding SelectedCurrency}" />
+            <Border Style="{StaticResource FieldShell}">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                    <Label Style="{StaticResource FieldLabel}" Text="VALUTA LOCALE DEL VIAGGIO" />
+                    <Label Grid.Row="1" Text="{Binding SelectedCurrencyLabel}" />
+                    <Button
+                        Grid.Column="1"
+                        Grid.RowSpan="2"
+                        Command="{Binding SelectCurrencyCommand}"
+                        Style="{StaticResource SecondaryButton}"
+                        Text="SCEGLI" />
+                </Grid>
+            </Border>
             <Entry Keyboard="Numeric" Placeholder="{Binding ExchangeRatePlaceholder}" Text="{Binding ExchangeRateInput}" />
-            <Label Style="{StaticResource MutedLabel}" Text="INSERISCI QUANTA VALUTA LOCALE CORRISPONDE A 1 EUR. ESEMPIO: USD 1,10 SIGNIFICA CHE 1 EUR VALE 1,10 USD." />
+            <Label Style="{StaticResource MutedLabel}" Text="{Binding ExchangeRateHelpText}" />
             <Entry Keyboard="Numeric" Placeholder="Budget base in EUR per ciascun partecipante del viaggio" Text="{Binding BudgetPerPaxInput}" />
             <Label Style="{StaticResource MutedLabel}" Text="QUESTO È IL BUDGET STANDARD CHE IL SISTEMA APPLICA AI PARTECIPANTI, SALVO OVERRIDE MANUALE." />
 
@@ -44,8 +52,16 @@
                                             Command="{Binding Source={x:Reference CreateTripRoot}, Path=BindingContext.RemoveParticipantCommand}"
                                             CommandParameter="{Binding .}"
                                             IsEnabled="{Binding Source={x:Reference CreateTripRoot}, Path=BindingContext.IsNotBusy}"
+                                            Style="{StaticResource TertiaryButton}"
                                             Text="RIMUOVI" />
-                                        <Label Grid.Row="1" Text="{Binding PersonalBudget, StringFormat='Budget: EUR {0:F2}'}" />
+                                        <Label Grid.Row="1">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="Budget: " FontAttributes="Bold" />
+                                                    <Span Text="{Binding PersonalBudget, StringFormat='EUR {0:F2}'}" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
                                     </Grid>
                                 </Frame>
                             </DataTemplate>
