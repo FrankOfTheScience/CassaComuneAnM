@@ -1,0 +1,38 @@
+{
+  "branches": [
+    "master"
+  ],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "releaseNameTemplate": "${nextRelease.version}",
+        "assets": [
+          {
+            "path": "artifacts/*.apk",
+            "label": "Android APK"
+          }
+        ]
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "CHANGELOG.md",
+          "README.md",
+          "FEATURES.md"
+        ],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ]
+  ]
+}

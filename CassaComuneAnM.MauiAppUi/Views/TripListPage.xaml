@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="CassaComuneAnM.MauiAppUi.Views.TripListPage"
+    x:Name="TripListRoot"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="">
+    <ScrollView>
+        <VerticalStackLayout Padding="{OnIdiom Phone='18', Tablet='28'}" Spacing="16" MaximumWidthRequest="760" HorizontalOptions="Center">
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource HeroLabel}" FontSize="24" Text="VIAGGI" />
+                <Label Style="{StaticResource MutedLabel}" Text="ARCHIVIO DEI VIAGGI GESTITI DALLA CASSA COMUNE." />
+                <Button Command="{Binding CreateTripCommand}" HorizontalOptions="Start" Style="{StaticResource SecondaryButton}" Text="NUOVO VIAGGIO" />
+                <Entry Placeholder="Filtra per nome, codice o paese" Text="{Binding SearchText}" />
+                <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center" JustifyContent="Start">
+                    <Button Command="{Binding SelectSortCommand}" Margin="0,0,8,8" Style="{StaticResource ChipButton}" Text="{Binding SelectedSortOption}" />
+                    <Button Command="{Binding ToggleSortDirectionCommand}" Margin="0,0,0,8" Style="{StaticResource ChipGhostButton}" Text="{Binding SortDirectionLabel}" />
+                </FlexLayout>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Margin="4,6,4,10" Spacing="10" BindableLayout.ItemsSource="{Binding Trips}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Style="{StaticResource ListCardFrame}" Margin="4,2,4,8" Padding="14">
+                            <VerticalStackLayout Spacing="6">
+                                <Label Style="{StaticResource CardTitleLabel}" FontSize="16" LineBreakMode="WordWrap" Text="{Binding TripName}" />
+                                <Label Style="{StaticResource MutedLabel}" Text="{Binding TripDate, StringFormat='Data {0:dd/MM/yyyy}'}" />
+                                <Label Style="{StaticResource MutedLabel}" Text="{Binding Country}" />
+                                <Button
+                                    Command="{Binding Source={x:Reference TripListRoot}, Path=BindingContext.OpenTripCommand}"
+                                    CommandParameter="{Binding .}"
+                                    HorizontalOptions="Start"
+                                    Style="{StaticResource ChipButton}"
+                                    Text="APRI" />
+                            </VerticalStackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

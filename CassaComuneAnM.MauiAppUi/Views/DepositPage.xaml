@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="CassaComuneAnM.MauiAppUi.Views.DepositPage"
+    x:Name="DepositRoot"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Versamenti">
+    <ScrollView>
+        <VerticalStackLayout Padding="{OnIdiom Phone='18', Tablet='28'}" Spacing="20" MaximumWidthRequest="760" HorizontalOptions="Center">
+            <Label Style="{StaticResource HeroLabel}" FontSize="24" Text="VERSAMENTI" />
+            <Label Style="{StaticResource MutedLabel}" Text="TIENI TRACCIA DEGLI IMPORTI VERSATI E DEL RESIDUO DISPONIBILE." />
+
+            <Frame Style="{StaticResource MetricCardFrame}" Padding="16" BackgroundColor="{StaticResource SurfaceAlt}" BorderColor="{StaticResource BorderStrong}">
+                <VerticalStackLayout Spacing="10">
+                    <Border Style="{StaticResource FieldShell}">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                            <Label Style="{StaticResource FieldLabel}" Text="PARTECIPANTE" />
+                            <Label Grid.Row="1" Text="{Binding SelectedParticipantLabel}" />
+                            <Button
+                                Grid.Column="1"
+                                Grid.RowSpan="2"
+                                Command="{Binding SelectParticipantCommand}"
+                                Style="{StaticResource SecondaryButton}"
+                                Text="SCEGLI" />
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource FieldShell}">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                            <Label Style="{StaticResource FieldLabel}" Text="VALUTA INSERIMENTO" />
+                            <Label Grid.Row="1" Text="{Binding SelectedInputCurrencyLabel}" />
+                            <Button
+                                Grid.Column="1"
+                                Grid.RowSpan="2"
+                                Command="{Binding SelectInputCurrencyCommand}"
+                                Style="{StaticResource SecondaryButton}"
+                                Text="CAMBIA" />
+                        </Grid>
+                    </Border>
+                    <Entry Keyboard="Numeric" Placeholder="{Binding AmountPlaceholder}" Text="{Binding AmountInput}" />
+                    <Label FontSize="12" Text="{Binding BudgetPreviewText}" TextColor="#52606D" />
+                    <Border Style="{StaticResource FieldShell}">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                            <Label Style="{StaticResource FieldLabel}" Text="DATA VERSAMENTO" />
+                            <Label Grid.Row="1" Text="{Binding DepositDateDisplay}" />
+                            <Button
+                                Grid.Column="1"
+                                Grid.RowSpan="2"
+                                Command="{Binding SelectDepositDateCommand}"
+                                Style="{StaticResource SecondaryButton}"
+                                Text="DATA" />
+                        </Grid>
+                    </Border>
+                    <Frame Style="{StaticResource ListCardFrame}" Padding="14">
+                        <VerticalStackLayout Spacing="6">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Label Style="{StaticResource SectionLabel}" FontSize="13" Text="COPERTURA VERSAMENTI" />
+                                <Label Grid.Column="1" Style="{StaticResource MetricCaptionLabel}" Text="{Binding DepositCoverageProgress, StringFormat='{0:P0}'}" />
+                            </Grid>
+                            <Label Style="{StaticResource MutedLabel}" Text="{Binding DepositCoverageText}" />
+                            <Grid Style="{StaticResource ProgressTrack}">
+                                <ProgressBar Progress="{Binding DepositCoverageProgress}" ProgressColor="{StaticResource Primary}" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Frame>
+                    <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+                    <Button Command="{Binding AddDepositCommand}" IsEnabled="{Binding IsNotBusy}" Text="{Binding SubmitButtonText}" />
+                    <Button Command="{Binding CancelEditCommand}" IsEnabled="{Binding IsNotBusy}" IsVisible="{Binding IsEditing}" Style="{StaticResource TertiaryButton}" Text="ANNULLA MODIFICA" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <Label Style="{StaticResource SectionLabel}" Text="STORICO VERSAMENTI" />
+            <Label Style="{StaticResource MutedLabel}" Text="Vista storica a card per consultazione rapida di pagante, importo e residuo." />
+            <Entry Placeholder="Filtra per pagante" Text="{Binding SearchText}" />
+            <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center" JustifyContent="Start">
+                <Button Command="{Binding SelectSortCommand}" Margin="0,0,8,8" Style="{StaticResource ChipButton}" Text="{Binding SelectedSortOption}" />
+                <Button Command="{Binding ToggleSortDirectionCommand}" Margin="0,0,0,8" Style="{StaticResource ChipGhostButton}" Text="{Binding SortDirectionLabel}" />
+            </FlexLayout>
+            <VerticalStackLayout Margin="4,6,4,10" Spacing="12" BindableLayout.ItemsSource="{Binding Deposits}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Style="{StaticResource ListCardFrame}" Margin="4,2,4,8">
+                            <VerticalStackLayout Spacing="6">
+                                <Label Style="{StaticResource CardTitleLabel}" FontSize="15" LineBreakMode="WordWrap" Text="{Binding PayerName}" />
+                                <Label Style="{StaticResource MutedLabel}" Text="{Binding Date, StringFormat='Data {0:dd/MM/yyyy}'}" />
+                                <Label>
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="Importo: " FontAttributes="Bold" />
+                                            <Span Text="{Binding AmountPrimaryDisplay}" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                                <Button
+                                    Command="{Binding Source={x:Reference DepositRoot}, Path=BindingContext.ShowDepositDetailCommand}"
+                                    CommandParameter="{Binding .}"
+                                    HorizontalOptions="Start"
+                                    IsEnabled="{Binding Source={x:Reference DepositRoot}, Path=BindingContext.IsNotBusy}"
+                                    Style="{StaticResource ChipButton}"
+                                    Text="DETTAGLIO" />
+                            </VerticalStackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="CassaComuneAnM.MauiAppUi.MainPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Cassa Comune">
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="18">
+            <Frame BackgroundColor="{StaticResource SurfaceAlt}" BorderColor="{StaticResource BorderStrong}" Padding="22" CornerRadius="20">
+                <VerticalStackLayout Spacing="10">
+                    <Label Style="{StaticResource HeroLabel}" Text="CASSA COMUNE ANM" />
+                    <BoxView HeightRequest="4" HorizontalOptions="Start" WidthRequest="84" Color="{StaticResource Primary}" />
+                </VerticalStackLayout>
+            </Frame>
+            <Label
+                Style="{StaticResource MutedLabel}"
+                FontSize="16"
+                Text="Applicazione per la gestione della cassa comune." />
+
+            <Frame BackgroundColor="{StaticResource SurfaceAlt}" BorderColor="{StaticResource BorderStrong}" CornerRadius="18" Padding="20">
+                <VerticalStackLayout Spacing="12">
+                    <Label Style="{StaticResource SectionLabel}" Text="OPERAZIONI DISPONIBILI" />
+                    <Button Command="{Binding ShowTripsCommand}" Text="APRI LISTA VIAGGI" />
+                    <Button Command="{Binding CreateTripCommand}" Text="CREA NUOVO VIAGGIO" />
+                </VerticalStackLayout>
+            </Frame>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
