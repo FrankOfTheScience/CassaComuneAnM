@@ -3,6 +3,7 @@ using CassaComuneAnM.Core.Entities;
 using CassaComuneAnM.Core.Enums;
 using CassaComuneAnM.MauiAppUi.Services;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows.Input;
 
 namespace CassaComuneAnM.MauiAppUi.ViewModels;
@@ -72,7 +73,13 @@ public class ExpenseViewModel : BaseViewModel
     public DateTime ExpenseDate
     {
         get => _expenseDate;
-        set => SetProperty(ref _expenseDate, value);
+        set
+        {
+            if (SetProperty(ref _expenseDate, value))
+            {
+                OnPropertyChanged(nameof(ExpenseDateDisplay));
+            }
+        }
     }
 
     public bool TourLeaderFree
@@ -115,6 +122,16 @@ public class ExpenseViewModel : BaseViewModel
             ? "Importo spesa in EUR"
             : $"Importo spesa in {SelectedInputCurrency}";
 
+    public string ExpenseDateDisplay => ExpenseDate.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("it-IT"));
+
+    public string ExpenseCoverageText => _trip is null
+        ? string.Empty
+        : $"SPESE REGISTRATE: {CurrencyDisplayService.FormatAmountWithEur(_trip.TotalExpenses, _trip)} SU {CurrencyDisplayService.FormatAmountWithEur(_trip.TotalBudget, _trip)}";
+
+    public double ExpenseCoverageProgress => _trip is null || _trip.TotalBudget <= 0m
+        ? 0
+        : (double)Math.Min(1m, _trip.TotalExpenses / _trip.TotalBudget);
+
     public IReadOnlyList<CurrencyOption> InputCurrencyOptions =>
         _trip is null
             ? new[] { new CurrencyOption(CurrencyCode.EUR, CurrencyCatalog.GetItalianName(CurrencyCode.EUR)) }
@@ -125,6 +142,7 @@ public class ExpenseViewModel : BaseViewModel
     public ICommand StartEditExpenseCommand { get; }
     public ICommand CancelEditCommand { get; }
     public ICommand SelectInputCurrencyCommand { get; }
+    public ICommand SelectExpenseDateCommand { get; }
 
     public ExpenseViewModel(ITripService tripService, string tripCode)
     {
@@ -136,6 +154,7 @@ public class ExpenseViewModel : BaseViewModel
         StartEditExpenseCommand = new Command<ExpenseHistoryItemViewModel>(StartEditExpense);
         CancelEditCommand = new Command(CancelEdit);
         SelectInputCurrencyCommand = new Command(async () => await SelectInputCurrencyAsync());
+        SelectExpenseDateCommand = new Command(async () => await SelectExpenseDateAsync());
     }
 
     public async Task LoadAsync()
@@ -186,7 +205,18 @@ public class ExpenseViewModel : BaseViewModel
             });
         }
 
+        OnPropertyChanged(nameof(ExpenseCoverageText));
+        OnPropertyChanged(nameof(ExpenseCoverageProgress));
         UpdateHelperText();
+    }
+
+    private async Task SelectExpenseDateAsync()
+    {
+        var selectedDate = await ShowDatePickerAsync("Data spesa", "Seleziona la data della spesa.", ExpenseDate);
+        if (selectedDate.HasValue)
+        {
+            ExpenseDate = selectedDate.Value;
+        }
     }
 
     private async Task SelectInputCurrencyAsync()

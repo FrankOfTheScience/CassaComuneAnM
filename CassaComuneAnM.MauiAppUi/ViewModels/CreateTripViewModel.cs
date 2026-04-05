@@ -3,6 +3,7 @@ using CassaComuneAnM.Core.Entities;
 using CassaComuneAnM.Core.Enums;
 using CassaComuneAnM.MauiAppUi.Services;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows.Input;
 
 namespace CassaComuneAnM.MauiAppUi.ViewModels;
@@ -41,7 +42,13 @@ public class CreateTripViewModel : BaseViewModel
     public DateTime TripDate
     {
         get => _tripDate;
-        set => SetProperty(ref _tripDate, value);
+        set
+        {
+            if (SetProperty(ref _tripDate, value))
+            {
+                OnPropertyChanged(nameof(TripDateDisplay));
+            }
+        }
     }
 
     public string CoordinatorName
@@ -106,6 +113,8 @@ public class CreateTripViewModel : BaseViewModel
         set => SetProperty(ref _participantBudgetInput, value);
     }
 
+    public string TripDateDisplay => TripDate.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("it-IT"));
+
     public string SelectedCurrencyLabel =>
         SelectedCurrency.HasValue
             ? CurrencyCatalog.GetDisplayLabel(SelectedCurrency.Value)
@@ -126,6 +135,7 @@ public class CreateTripViewModel : BaseViewModel
     public ICommand AddParticipantCommand { get; }
     public ICommand RemoveParticipantCommand { get; }
     public ICommand SelectCurrencyCommand { get; }
+    public ICommand SelectTripDateCommand { get; }
 
     public CreateTripViewModel(ITripService tripService)
     {
@@ -135,6 +145,7 @@ public class CreateTripViewModel : BaseViewModel
         AddParticipantCommand = new Command(AddParticipant);
         RemoveParticipantCommand = new Command<InitialParticipantViewModel>(RemoveParticipant);
         SelectCurrencyCommand = new Command(async () => await SelectCurrencyAsync());
+        SelectTripDateCommand = new Command(async () => await SelectTripDateAsync());
     }
 
     private void AddParticipant()
@@ -183,6 +194,16 @@ public class CreateTripViewModel : BaseViewModel
         if (selected is not null)
         {
             SelectedCurrency = selected.Code;
+        }
+    }
+
+    private async Task SelectTripDateAsync()
+    {
+        var selectedDate = await ShowDatePickerAsync("Data viaggio", "Seleziona la data del viaggio.", TripDate);
+        if (selectedDate.HasValue)
+        {
+            TripDate = selectedDate.Value;
+            OnPropertyChanged(nameof(TripDateDisplay));
         }
     }
 
@@ -272,6 +293,7 @@ public class CreateTripViewModel : BaseViewModel
             if (TryParseDecimalInput(ExchangeRateInput, out var eurRate) && eurRate > 0)
             {
                 exchangeRate = eurRate;
+                ExchangeRateInput = FormatLocalizedDecimalInput(exchangeRate, "0.00");
                 return true;
             }
 
@@ -282,6 +304,7 @@ public class CreateTripViewModel : BaseViewModel
         if (TryParseDecimalInput(ExchangeRateInput, out var parsedRate) && parsedRate > 0)
         {
             exchangeRate = parsedRate;
+            ExchangeRateInput = FormatLocalizedDecimalInput(exchangeRate, "0.00");
             return true;
         }
 

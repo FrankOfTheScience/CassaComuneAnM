@@ -5,6 +5,7 @@ using CassaComuneAnM.MauiAppUi.Services;
 using CassaComuneAnM.MauiAppUi.Views;
 using Microsoft.Maui.Graphics;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows.Input;
 
 namespace CassaComuneAnM.MauiAppUi.ViewModels;
@@ -65,6 +66,8 @@ public class TripDetailViewModel : BaseViewModel
         set => SetProperty(ref _exchangeRateInput, value);
     }
 
+    public string TripDateDisplay => Trip?.TripDate.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("it-IT")) ?? string.Empty;
+
     public string SelectedCurrencyLabel =>
         SelectedCurrency.HasValue
             ? CurrencyCatalog.GetDisplayLabel(SelectedCurrency.Value)
@@ -80,6 +83,10 @@ public class TripDetailViewModel : BaseViewModel
 
     public string ExchangeRateHelpText =>
         CurrencyDisplayService.BuildExchangeRateHelp(SelectedCurrency ?? CurrencyCode.USD);
+
+    public string ExchangeRateDisplay => Trip is null
+        ? string.Empty
+        : Trip.ExchangeRate.ToString("N2", CultureInfo.GetCultureInfo("it-IT"));
 
     public string CurrencySummary => Trip is null
         ? string.Empty
@@ -127,6 +134,14 @@ public class TripDetailViewModel : BaseViewModel
         ? string.Empty
         : $"Disavanzo attuale: {CurrencyDisplayService.FormatAmountWithEur(Math.Abs(Trip.CashBalance), Trip)}. Registra un versamento o copri il saldo il prima possibile.";
 
+    public double ExpensesVsPaidProgress => Trip is null || Trip.TotalExpenses <= 0m
+        ? 0
+        : (double)Math.Min(1m, Trip.TotalPaid / Trip.TotalExpenses);
+
+    public double PaidVsBudgetProgress => Trip is null || Trip.TotalBudget <= 0m
+        ? 0
+        : (double)Math.Min(1m, Trip.TotalPaid / Trip.TotalBudget);
+
     public ICommand ManageParticipantsCommand { get; }
     public ICommand ManageExpensesCommand { get; }
     public ICommand ManageDepositsCommand { get; }
@@ -135,6 +150,7 @@ public class TripDetailViewModel : BaseViewModel
     public ICommand SaveTripCommand { get; }
     public ICommand CancelTripEditCommand { get; }
     public ICommand SelectCurrencyCommand { get; }
+    public ICommand SelectTripDateCommand { get; }
 
     public TripDetailViewModel(ITripService tripService, IServiceProvider serviceProvider, string tripCode)
     {
@@ -151,6 +167,7 @@ public class TripDetailViewModel : BaseViewModel
         SaveTripCommand = new Command(async () => await SaveTripAsync());
         CancelTripEditCommand = new Command(CancelTripEdit);
         SelectCurrencyCommand = new Command(async () => await SelectCurrencyAsync());
+        SelectTripDateCommand = new Command(async () => await SelectTripDateAsync());
     }
 
     public async Task LoadTripAsync()
@@ -209,6 +226,21 @@ public class TripDetailViewModel : BaseViewModel
         if (selected is not null)
         {
             SelectedCurrency = selected.Code;
+        }
+    }
+
+    private async Task SelectTripDateAsync()
+    {
+        if (Trip is null)
+        {
+            return;
+        }
+
+        var selectedDate = await ShowDatePickerAsync("Data viaggio", "Seleziona la data del viaggio.", Trip.TripDate);
+        if (selectedDate.HasValue)
+        {
+            Trip.TripDate = selectedDate.Value;
+            OnPropertyChanged(nameof(TripDateDisplay));
         }
     }
 
@@ -272,8 +304,10 @@ public class TripDetailViewModel : BaseViewModel
         {
             Trip.Currency = SelectedCurrency.Value.ToString();
             Trip.ExchangeRate = exchangeRate;
+            ExchangeRateInput = FormatLocalizedDecimalInput(exchangeRate, "0.00");
             await _tripService.SaveOrUpdateTripAsync(Trip);
             IsEditingTrip = false;
+            OnTripChanged();
             await LoadTripAsync();
         });
     }
@@ -290,7 +324,8 @@ public class TripDetailViewModel : BaseViewModel
         SelectedCurrency = Enum.TryParse<CurrencyCode>(Trip.Currency, true, out var parsedCurrency)
             ? parsedCurrency
             : null;
-        ExchangeRateInput = FormatDecimalInput(Trip.ExchangeRate, "0.####");
+        ExchangeRateInput = FormatLocalizedDecimalInput(Trip.ExchangeRate, "0.00");
+        OnPropertyChanged(nameof(TripDateDisplay));
     }
 
     private bool TryGetExchangeRate(out decimal exchangeRate, out string errorMessage)
@@ -308,6 +343,7 @@ public class TripDetailViewModel : BaseViewModel
             if (TryParseDecimalInput(ExchangeRateInput, out var eurRate) && eurRate > 0)
             {
                 exchangeRate = eurRate;
+                ExchangeRateInput = FormatLocalizedDecimalInput(exchangeRate, "0.00");
                 return true;
             }
 
@@ -318,6 +354,7 @@ public class TripDetailViewModel : BaseViewModel
         if (TryParseDecimalInput(ExchangeRateInput, out var parsedRate) && parsedRate > 0)
         {
             exchangeRate = parsedRate;
+            ExchangeRateInput = FormatLocalizedDecimalInput(exchangeRate, "0.00");
             return true;
         }
 
@@ -328,6 +365,8 @@ public class TripDetailViewModel : BaseViewModel
     private void OnTripChanged()
     {
         OnPropertyChanged(nameof(CurrencySummary));
+        OnPropertyChanged(nameof(TripDateDisplay));
+        OnPropertyChanged(nameof(ExchangeRateDisplay));
         OnPropertyChanged(nameof(TotalBudgetPrimaryDisplay));
         OnPropertyChanged(nameof(TotalBudgetSecondaryDisplay));
         OnPropertyChanged(nameof(TotalPaidPrimaryDisplay));
@@ -339,5 +378,7 @@ public class TripDetailViewModel : BaseViewModel
         OnPropertyChanged(nameof(IsCashBalanceNegative));
         OnPropertyChanged(nameof(CashBalanceColor));
         OnPropertyChanged(nameof(CashDeficitWarningText));
+        OnPropertyChanged(nameof(ExpensesVsPaidProgress));
+        OnPropertyChanged(nameof(PaidVsBudgetProgress));
     }
 }

@@ -10,6 +10,7 @@
             <VerticalStackLayout Spacing="10">
                 <Entry Placeholder="Nome partecipante" Text="{Binding ParticipantName}" />
                 <Entry Keyboard="Numeric" Placeholder="{Binding PersonalBudgetPlaceholder}" Text="{Binding PersonalBudgetInput}" />
+                <Label Style="{StaticResource MutedLabel}" Text="{Binding PersonalBudgetHelpText}" />
                 <Button Command="{Binding AddParticipantCommand}" Text="Aggiungi partecipante" />
             </VerticalStackLayout>
         </Frame>

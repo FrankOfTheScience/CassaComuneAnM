@@ -11,7 +11,18 @@
             <Label Style="{StaticResource MutedLabel}" Text="COMPILA I DATI PRINCIPALI E PREPARA I PARTECIPANTI INIZIALI." />
             <Entry Placeholder="Nome viaggio" Text="{Binding TripName}" />
             <Entry Placeholder="Codice viaggio" Text="{Binding TripCode}" />
-            <DatePicker Date="{Binding TripDate}" />
+            <Border Style="{StaticResource FieldShell}">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                    <Label Style="{StaticResource FieldLabel}" Text="DATA VIAGGIO" />
+                    <Label Grid.Row="1" Text="{Binding TripDateDisplay}" />
+                    <Button
+                        Grid.Column="1"
+                        Grid.RowSpan="2"
+                        Command="{Binding SelectTripDateCommand}"
+                        Style="{StaticResource SecondaryButton}"
+                        Text="DATA" />
+                </Grid>
+            </Border>
             <Entry Placeholder="Nome coordinatore" Text="{Binding CoordinatorName}" />
             <Entry Placeholder="Codice coordinatore" Text="{Binding CoordinatorCode}" />
             <Entry Placeholder="Nome cassiere" Text="{Binding CashierName}" />
@@ -30,14 +41,14 @@
             </Border>
             <Entry Keyboard="Numeric" Placeholder="{Binding ExchangeRatePlaceholder}" Text="{Binding ExchangeRateInput}" />
             <Label Style="{StaticResource MutedLabel}" Text="{Binding ExchangeRateHelpText}" />
-            <Entry Keyboard="Numeric" Placeholder="Budget base in EUR per ciascun partecipante del viaggio" Text="{Binding BudgetPerPaxInput}" />
+            <Entry Keyboard="Numeric" Placeholder="Budget base in EUR" Text="{Binding BudgetPerPaxInput}" />
             <Label Style="{StaticResource MutedLabel}" Text="QUESTO È IL BUDGET STANDARD CHE IL SISTEMA APPLICA AI PARTECIPANTI, SALVO OVERRIDE MANUALE." />
 
             <Frame Padding="16" BackgroundColor="{StaticResource SurfaceAlt}" BorderColor="{StaticResource BorderStrong}">
                 <VerticalStackLayout Spacing="10">
                     <Label Style="{StaticResource SectionLabel}" Text="PARTECIPANTI INIZIALI" />
                     <Entry Placeholder="Nome partecipante" Text="{Binding ParticipantName}" />
-                    <Entry Keyboard="Numeric" Placeholder="Budget personale in EUR del singolo partecipante, vuoto = usa il budget base" Text="{Binding ParticipantBudgetInput}" />
+                    <Entry Keyboard="Numeric" Placeholder="Budget personale in EUR" Text="{Binding ParticipantBudgetInput}" />
                     <Label Style="{StaticResource MutedLabel}" Text="USA QUESTO CAMPO SOLO SE QUEL PARTECIPANTE DEVE AVERE UN BUDGET DIVERSO DAL BUDGET BASE DEL VIAGGIO." />
                     <Button Command="{Binding AddParticipantCommand}" IsEnabled="{Binding IsNotBusy}" Text="AGGIUNGI PARTECIPANTE" />
 

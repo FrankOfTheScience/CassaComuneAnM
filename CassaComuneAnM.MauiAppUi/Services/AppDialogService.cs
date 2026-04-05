@@ -7,6 +7,7 @@ public interface IAppDialogService
     Task ShowAlertAsync(string title, string message, string actionText = "CHIUDI");
     Task<bool> ShowConfirmAsync(string title, string message, string acceptText = "CONFERMA", string cancelText = "ANNULLA");
     Task<T?> ShowSelectionAsync<T>(string title, string message, IReadOnlyList<T> items, Func<T, string> labelSelector, T? selected = default);
+    Task<DateTime?> ShowDatePickerAsync(string title, string message, DateTime selectedDate);
 }
 
 public sealed class AppDialogService : IAppDialogService
@@ -78,6 +79,87 @@ public sealed class AppDialogService : IAppDialogService
         };
 
         var page = CreateHostPage(title, message, scrollableList, cancelButton);
+        await hostPage.Navigation.PushModalAsync(page, false);
+        return await completion.Task;
+    }
+
+    public async Task<DateTime?> ShowDatePickerAsync(string title, string message, DateTime selectedDate)
+    {
+        var hostPage = GetActivePage();
+        if (hostPage is null)
+        {
+            return null;
+        }
+
+        var completion = new TaskCompletionSource<DateTime?>();
+        var picker = new DatePicker
+        {
+            Date = selectedDate,
+            Format = "dd/MM/yyyy",
+            HorizontalOptions = LayoutOptions.Fill
+        };
+
+        var content = new VerticalStackLayout
+        {
+            Spacing = 12,
+            Children =
+            {
+                new Border
+                {
+                    Style = (Style?)Application.Current?.Resources["FieldShell"],
+                    Content = new VerticalStackLayout
+                    {
+                        Spacing = 6,
+                        Children =
+                        {
+                            new Label
+                            {
+                                Text = "DATA",
+                                Style = (Style?)Application.Current?.Resources["FieldLabel"]
+                            },
+                            picker
+                        }
+                    }
+                }
+            }
+        };
+
+        var actions = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitionCollection
+            {
+                new ColumnDefinition(GridLength.Star),
+                new ColumnDefinition(GridLength.Star)
+            },
+            ColumnSpacing = 10
+        };
+
+        var confirmButton = new Button
+        {
+            Text = "CONFERMA",
+            Style = (Style?)Application.Current?.Resources["PrimaryButton"]
+        };
+        confirmButton.Clicked += async (_, _) =>
+        {
+            completion.TrySetResult(picker.Date);
+            await hostPage.Navigation.PopModalAsync(false);
+        };
+
+        var cancelButton = new Button
+        {
+            Text = "ANNULLA",
+            Style = (Style?)Application.Current?.Resources["TertiaryButton"]
+        };
+        cancelButton.Clicked += async (_, _) =>
+        {
+            completion.TrySetResult(null);
+            await hostPage.Navigation.PopModalAsync(false);
+        };
+
+        actions.Add(confirmButton);
+        actions.Add(cancelButton, 1, 0);
+
+        var page = CreateHostPage(title, message, content, actions);
         await hostPage.Navigation.PushModalAsync(page, false);
         return await completion.Task;
     }

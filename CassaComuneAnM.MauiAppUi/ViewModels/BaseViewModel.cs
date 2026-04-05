@@ -86,6 +86,16 @@ public abstract class BaseViewModel : INotifyPropertyChanged
         return DialogService.ShowSelectionAsync(title, message, items, labelSelector, selected);
     }
 
+    protected Task<DateTime?> ShowDatePickerAsync(string title, string message, DateTime selectedDate)
+    {
+        if (DialogService is null)
+        {
+            return Task.FromResult<DateTime?>(null);
+        }
+
+        return DialogService.ShowDatePickerAsync(title, message, selectedDate);
+    }
+
     protected async Task RunBusyAsync(Func<Task> action, string errorTitle = "Errore")
     {
         if (IsBusy)
@@ -127,5 +137,10 @@ public abstract class BaseViewModel : INotifyPropertyChanged
     protected string FormatDecimalInput(decimal value, string format = "0.####")
     {
         return value.ToString(format, CultureInfo.InvariantCulture);
+    }
+
+    protected string FormatLocalizedDecimalInput(decimal value, string format = "N2")
+    {
+        return value.ToString(format, CultureInfo.GetCultureInfo("it-IT"));
     }
 }

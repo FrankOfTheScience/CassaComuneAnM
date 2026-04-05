@@ -29,9 +29,12 @@ public class ParticipantViewModel : BaseViewModel
     }
 
     public string PersonalBudgetPlaceholder =>
+        "Budget personale in EUR";
+
+    public string PersonalBudgetHelpText =>
         _trip?.BudgetPerPax > 0
-            ? $"Budget personale in EUR, vuoto = budget base viaggio ({_trip.BudgetPerPax:F2})"
-            : "Budget personale in EUR per questo partecipante";
+            ? $"Vuoto = usa il budget base viaggio ({_trip.BudgetPerPax:F2} EUR)."
+            : "Inserisci il budget personale del partecipante.";
 
     public ICommand AddParticipantCommand { get; }
     public ICommand RemoveParticipantCommand { get; }

@@ -3,6 +3,7 @@ using CassaComuneAnM.Core.Entities;
 using CassaComuneAnM.Core.Enums;
 using CassaComuneAnM.MauiAppUi.Services;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows.Input;
 
 namespace CassaComuneAnM.MauiAppUi.ViewModels;
@@ -72,7 +73,13 @@ public class DepositViewModel : BaseViewModel
     public DateTime DepositDate
     {
         get => _depositDate;
-        set => SetProperty(ref _depositDate, value);
+        set
+        {
+            if (SetProperty(ref _depositDate, value))
+            {
+                OnPropertyChanged(nameof(DepositDateDisplay));
+            }
+        }
     }
 
     public string BudgetPreviewText
@@ -105,6 +112,16 @@ public class DepositViewModel : BaseViewModel
             ? "Importo versamento in EUR"
             : $"Importo versamento in {SelectedInputCurrency}";
 
+    public string DepositDateDisplay => DepositDate.ToString("dd/MM/yyyy", CultureInfo.GetCultureInfo("it-IT"));
+
+    public string DepositCoverageText => _trip is null
+        ? string.Empty
+        : $"COPERTURA VERSAMENTI: {CurrencyDisplayService.FormatAmountWithEur(_trip.TotalPaid, _trip)} SU {CurrencyDisplayService.FormatAmountWithEur(_trip.TotalBudget, _trip)}";
+
+    public double DepositCoverageProgress => _trip is null || _trip.TotalBudget <= 0m
+        ? 0
+        : (double)Math.Min(1m, _trip.TotalPaid / _trip.TotalBudget);
+
     public IReadOnlyList<CurrencyOption> InputCurrencyOptions =>
         _trip is null
             ? new[] { new CurrencyOption(CurrencyCode.EUR, CurrencyCatalog.GetItalianName(CurrencyCode.EUR)) }
@@ -116,6 +133,7 @@ public class DepositViewModel : BaseViewModel
     public ICommand CancelEditCommand { get; }
     public ICommand SelectParticipantCommand { get; }
     public ICommand SelectInputCurrencyCommand { get; }
+    public ICommand SelectDepositDateCommand { get; }
 
     public DepositViewModel(ITripService tripService, string tripCode)
     {
@@ -128,6 +146,7 @@ public class DepositViewModel : BaseViewModel
         CancelEditCommand = new Command(CancelEdit);
         SelectParticipantCommand = new Command(async () => await SelectParticipantAsync());
         SelectInputCurrencyCommand = new Command(async () => await SelectInputCurrencyAsync());
+        SelectDepositDateCommand = new Command(async () => await SelectDepositDateAsync());
     }
 
     public async Task LoadAsync()
@@ -178,7 +197,18 @@ public class DepositViewModel : BaseViewModel
             });
         }
 
+        OnPropertyChanged(nameof(DepositCoverageText));
+        OnPropertyChanged(nameof(DepositCoverageProgress));
         UpdateBudgetPreview();
+    }
+
+    private async Task SelectDepositDateAsync()
+    {
+        var selectedDate = await ShowDatePickerAsync("Data versamento", "Seleziona la data del versamento.", DepositDate);
+        if (selectedDate.HasValue)
+        {
+            DepositDate = selectedDate.Value;
+        }
     }
 
     private async Task SelectParticipantAsync()

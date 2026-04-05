@@ -26,12 +26,25 @@
                         </Grid>
                     </Border>
                     <Entry Keyboard="Numeric" Placeholder="{Binding AmountPlaceholder}" Text="{Binding AmountInput}" />
-                    <DatePicker Date="{Binding ExpenseDate}" />
+                    <Border Style="{StaticResource FieldShell}">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                            <Label Style="{StaticResource FieldLabel}" Text="DATA SPESA" />
+                            <Label Grid.Row="1" Text="{Binding ExpenseDateDisplay}" />
+                            <Button
+                                Grid.Column="1"
+                                Grid.RowSpan="2"
+                                Command="{Binding SelectExpenseDateCommand}"
+                                Style="{StaticResource SecondaryButton}"
+                                Text="DATA" />
+                        </Grid>
+                    </Border>
                     <HorizontalStackLayout Spacing="12">
                         <CheckBox IsChecked="{Binding TourLeaderFree}" />
                         <Label VerticalTextAlignment="Center" Text="Tour leader gratuito" />
                     </HorizontalStackLayout>
                     <Label FontSize="12" Text="{Binding HelperText}" TextColor="#52606D" />
+                    <Label Style="{StaticResource MutedLabel}" Text="{Binding ExpenseCoverageText}" />
+                    <ProgressBar Progress="{Binding ExpenseCoverageProgress}" ProgressColor="{StaticResource Primary}" />
 
                     <Label Style="{StaticResource SectionLabel}" FontSize="13" Text="ESCLUDI PARTECIPANTI DAL BENEFICIO" />
                     <VerticalStackLayout BindableLayout.ItemsSource="{Binding Participants}" Spacing="8">
@@ -52,6 +65,12 @@
             </Frame>
 
             <Label Style="{StaticResource SectionLabel}" Text="STORICO SPESE" />
+            <Grid ColumnDefinitions="1.4*,1.0*,1.2*,1.4*" ColumnSpacing="8" Padding="4,0">
+                <Label Style="{StaticResource FieldLabel}" Text="DESCRIZIONE" />
+                <Label Grid.Column="1" Style="{StaticResource FieldLabel}" Text="DATA" />
+                <Label Grid.Column="2" Style="{StaticResource FieldLabel}" Text="IMPORTO" />
+                <Label Grid.Column="3" Style="{StaticResource FieldLabel}" Text="BENEFICIARI" />
+            </Grid>
             <CollectionView EmptyView="Nessuna spesa." ItemsSource="{Binding Expenses}">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>

@@ -18,8 +18,19 @@
                     <Entry IsVisible="{Binding IsEditingTrip}" Placeholder="Nome viaggio" Text="{Binding Trip.TripName}" />
                     <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.TripCode, StringFormat='Codice: {0}'}" />
                     <Entry IsVisible="{Binding IsEditingTrip}" Placeholder="Codice viaggio" Text="{Binding Trip.TripCode}" />
-                    <DatePicker Date="{Binding Trip.TripDate}" IsVisible="{Binding IsEditingTrip}" />
-                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.TripDate, StringFormat='Data: {0:dd/MM/yyyy}'}" />
+                    <Border IsVisible="{Binding IsEditingTrip}" Style="{StaticResource FieldShell}">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                            <Label Style="{StaticResource FieldLabel}" Text="DATA VIAGGIO" />
+                            <Label Grid.Row="1" Text="{Binding TripDateDisplay}" />
+                            <Button
+                                Grid.Column="1"
+                                Grid.RowSpan="2"
+                                Command="{Binding SelectTripDateCommand}"
+                                Style="{StaticResource SecondaryButton}"
+                                Text="DATA" />
+                        </Grid>
+                    </Border>
+                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding TripDateDisplay, StringFormat='Data: {0}'}" />
                     <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.CoordinatorName, StringFormat='Coordinatore: {0}'}" />
                     <Entry IsVisible="{Binding IsEditingTrip}" Placeholder="Coordinatore" Text="{Binding Trip.CoordinatorName}" />
                     <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.CashierName, StringFormat='Cassiere: {0}'}" />
@@ -39,7 +50,7 @@
                                 Text="SCEGLI" />
                         </Grid>
                     </Border>
-                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.ExchangeRate, StringFormat='Cambio: {0:F4}'}" />
+                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding ExchangeRateDisplay, StringFormat='Cambio: {0}'}" />
                     <Entry IsVisible="{Binding IsEditingTrip}" Keyboard="Numeric" Placeholder="{Binding ExchangeRatePlaceholder}" Text="{Binding ExchangeRateInput}" />
                     <Label IsVisible="{Binding IsEditingTrip}" Style="{StaticResource MutedLabel}" Text="{Binding ExchangeRateHelpText}" />
                     <FlexLayout IsVisible="{Binding IsEditingTrip}" Direction="Row" Wrap="Wrap" JustifyContent="Start" AlignItems="Center">
@@ -80,6 +91,16 @@
                     </VerticalStackLayout>
                 </Frame>
             </FlexLayout>
+
+            <Frame BackgroundColor="{StaticResource SurfaceAlt}" BorderColor="{StaticResource BorderStrong}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Style="{StaticResource SectionLabel}" Text="OVERVIEW RAPIDA" />
+                    <Label Style="{StaticResource FieldLabel}" Text="VERSATO VS SPESE" />
+                    <ProgressBar Progress="{Binding ExpensesVsPaidProgress}" ProgressColor="{StaticResource Primary}" />
+                    <Label Style="{StaticResource FieldLabel}" Text="VERSATO VS BUDGET" />
+                    <ProgressBar Progress="{Binding PaidVsBudgetProgress}" ProgressColor="{StaticResource Primary}" />
+                </VerticalStackLayout>
+            </Frame>
 
             <Frame IsVisible="{Binding IsCashBalanceNegative}" Style="{StaticResource DangerFrame}">
                 <VerticalStackLayout Spacing="6">
