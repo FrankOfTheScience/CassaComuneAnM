@@ -22,7 +22,7 @@ public class TripService : ITripService
         await _tripRepo.GetAllAsync();
 
     public async Task<Trip?> GetTripByCodeAsync(string tripCode) =>
-        (await _tripRepo.GetAllAsync()).FirstOrDefault(t => t.TripCode == tripCode);
+        await _tripRepo.GetByCodeWithDetailsAsync(tripCode);
 
     public async Task CreateTripAsync(Trip trip)
     {
@@ -160,11 +160,76 @@ public class TripService : ITripService
 
     public async Task<List<Expense>> GetExpensesAsync(string tripCode)
     {
-        var trip = await GetTripByCodeAsync(tripCode);
+        var trip = await _tripRepo.GetByCodeWithDetailsAsync(tripCode);
         return trip?.Expenses ?? new List<Expense>();
     }
 
-    public async Task AddDepositAsync(string tripCode, string payerName, DateTime date, decimal amount)
+    public async Task DeleteExpenseAsync(string tripCode, int expenseId)
+    {
+        var trip = await _tripRepo.GetByCodeWithDetailsAsync(tripCode);
+        if (trip == null)
+            throw new InvalidOperationException($"Trip {tripCode} non trovato");
+
+        var expense = trip.Expenses.FirstOrDefault(e => e.Id == expenseId);
+        if (expense == null)
+            return;
+
+        trip.Expenses.Remove(expense);
+        await _expenseRepo.DeleteAsync(expense);
+        await _tripRepo.SaveChangesAsync();
+    }
+
+    public async Task UpdateExpenseAsync(string tripCode, int expenseId, DateTime date, string description, decimal amount, bool tourLeaderFree, List<string> excludedNames)
+    {
+        var trip = await _tripRepo.GetByCodeWithDetailsAsync(tripCode);
+        if (trip == null)
+            throw new InvalidOperationException($"Trip {tripCode} non trovato");
+
+        var expense = trip.Expenses.FirstOrDefault(e => e.Id == expenseId);
+        if (expense == null)
+            throw new InvalidOperationException($"Spesa {expenseId} non trovata");
+
+        var allParticipants = trip.Participants.Select(p => p.Name).ToList();
+        var beneficiaries = allParticipants.Except(excludedNames).ToList();
+
+        if (allParticipants.Count == 0)
+            throw new InvalidOperationException("No participants in the trip.");
+
+        var costPerPerson = amount / allParticipants.Count;
+        var payersCount = beneficiaries.Count;
+        if (tourLeaderFree && beneficiaries.Contains(trip.CoordinatorName))
+            payersCount--;
+
+        if (tourLeaderFree && beneficiaries.Contains(trip.CoordinatorName))
+            description += $" (TL Free of {costPerPerson:F2})";
+
+        var effectiveTotal = costPerPerson * (allParticipants.Count - (tourLeaderFree ? 1 : 0));
+
+        expense.Date = date;
+        expense.Description = description;
+        expense.Amount = effectiveTotal;
+        expense.TourLeaderFree = tourLeaderFree;
+        expense.ExpenseParticipants.Clear();
+
+        foreach (var bName in beneficiaries)
+        {
+            var participant = trip.Participants.FirstOrDefault(p => p.Name == bName);
+            if (participant != null)
+            {
+                expense.ExpenseParticipants.Add(new ExpenseParticipant
+                {
+                    Expense = expense,
+                    Participant = participant,
+                    ParticipantId = participant.Id
+                });
+            }
+        }
+
+        await _expenseRepo.UpdateAsync(expense);
+        await _tripRepo.SaveChangesAsync();
+    }
+
+    public async Task AddDepositAsync(string tripCode, string payerName, DateTime date, decimal amount, bool allowBudgetIncrease = false)
     {
         var trip = await GetTripByCodeAsync(tripCode);
         if (trip == null)
@@ -183,6 +248,9 @@ public class TripService : ITripService
 
         if (amount > residuo)
         {
+            if (!allowBudgetIncrease)
+                throw new InvalidOperationException($"Il versamento supera il residuo disponibile per {payerName}.");
+
             // Logica: aumento budget per tutti i partecipanti
             decimal delta = amount - residuo;
             foreach (var p in trip.Participants)
@@ -211,8 +279,77 @@ public class TripService : ITripService
 
     public async Task<List<Deposit>> GetDepositsAsync(string tripCode)
     {
-        var trip = await GetTripByCodeAsync(tripCode);
+        var trip = await _tripRepo.GetByCodeWithDetailsAsync(tripCode);
         return trip?.Deposits ?? new List<Deposit>();
+    }
+
+    public async Task DeleteDepositAsync(string tripCode, int depositId)
+    {
+        var trip = await _tripRepo.GetByCodeWithDetailsAsync(tripCode);
+        if (trip == null)
+            throw new InvalidOperationException($"Trip {tripCode} non trovato");
+
+        var deposit = trip.Deposits.FirstOrDefault(d => d.Id == depositId);
+        if (deposit == null)
+            return;
+
+        var participant = trip.Participants.FirstOrDefault(p => p.Id == deposit.ParticipantId);
+        participant?.Deposits.Remove(deposit);
+        trip.Deposits.Remove(deposit);
+
+        await _depositRepo.DeleteAsync(deposit);
+        await _depositRepo.SaveChangesAsync();
+        await SaveOrUpdateTripAsync(trip);
+    }
+
+    public async Task UpdateDepositAsync(string tripCode, int depositId, string payerName, DateTime date, decimal amount, bool allowBudgetIncrease = false)
+    {
+        var trip = await GetTripByCodeAsync(tripCode);
+        if (trip == null)
+            throw new InvalidOperationException($"Trip {tripCode} non trovato");
+
+        var deposit = trip.Deposits.FirstOrDefault(d => d.Id == depositId);
+        if (deposit == null)
+            throw new InvalidOperationException($"Versamento {depositId} non trovato");
+
+        var participant = trip.Participants.FirstOrDefault(p => p.Name == payerName);
+        if (participant == null)
+            throw new InvalidOperationException($"Partecipante {payerName} non trovato");
+
+        if (amount <= 0)
+            throw new ArgumentException("L'importo deve essere maggiore di zero.", nameof(amount));
+
+        var previousParticipant = trip.Participants.FirstOrDefault(p => p.Id == deposit.ParticipantId);
+        previousParticipant?.Deposits.Remove(deposit);
+
+        var totalWithoutCurrent = participant.Deposits
+            .Where(d => d.Id != depositId)
+            .Sum(d => d.Amount);
+        var residuo = participant.PersonalBudget - totalWithoutCurrent;
+
+        if (amount > residuo)
+        {
+            if (!allowBudgetIncrease)
+                throw new InvalidOperationException($"Il versamento supera il residuo disponibile per {payerName}.");
+
+            var delta = amount - residuo;
+            foreach (var p in trip.Participants)
+                p.PersonalBudget += delta;
+        }
+
+        deposit.Date = date;
+        deposit.Amount = amount;
+        deposit.PayerName = payerName;
+        deposit.ParticipantId = participant.Id;
+        deposit.Participant = participant;
+        deposit.TripId = trip.Id;
+        deposit.Trip = trip;
+
+        participant.Deposits.Add(deposit);
+
+        await _depositRepo.UpdateAsync(deposit);
+        await _depositRepo.SaveChangesAsync();
+        await SaveOrUpdateTripAsync(trip);
     }
 
     public async Task<decimal> GetTotalBudgetAsync(string tripCode) =>

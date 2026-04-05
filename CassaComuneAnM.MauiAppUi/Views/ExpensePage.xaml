@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="CassaComuneAnM.MauiAppUi.Views.ExpensePage"
+    x:Name="ExpenseRoot"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Spese">
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="18">
+            <Frame Padding="16">
+                <VerticalStackLayout Spacing="10">
+                    <Entry Placeholder="Descrizione spesa" Text="{Binding Description}" />
+                    <Entry Keyboard="Numeric" Placeholder="Importo" Text="{Binding Amount}" />
+                    <DatePicker Date="{Binding ExpenseDate}" />
+                    <HorizontalStackLayout Spacing="12">
+                        <CheckBox IsChecked="{Binding TourLeaderFree}" />
+                        <Label VerticalTextAlignment="Center" Text="Tour leader gratuito" />
+                    </HorizontalStackLayout>
+
+                    <Label FontAttributes="Bold" Text="Escludi partecipanti dal beneficio" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Participants}" Spacing="8">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <HorizontalStackLayout Spacing="12">
+                                    <CheckBox IsChecked="{Binding IsSelected}" />
+                                    <Label VerticalTextAlignment="Center" Text="{Binding Name}" />
+                                </HorizontalStackLayout>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+
+                    <Button Command="{Binding AddExpenseCommand}" Text="{Binding SubmitButtonText}" />
+                    <Button Command="{Binding CancelEditCommand}" IsVisible="{Binding IsEditing}" Text="Annulla modifica" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <Label FontAttributes="Bold" FontSize="20" Text="Storico spese" />
+            <CollectionView EmptyView="Nessuna spesa." ItemsSource="{Binding Expenses}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Margin="0,0,0,12" Padding="14">
+                            <VerticalStackLayout Spacing="6">
+                                <Label FontAttributes="Bold" Text="{Binding Description}" />
+                                <Label Text="{Binding Date, StringFormat='Data: {0:dd/MM/yyyy}'}" />
+                                <Label Text="{Binding Amount, StringFormat='Importo: EUR {0:F2}'}" />
+                                <Label Text="{Binding BeneficiariesText, StringFormat='Beneficiari: {0}'}" />
+                                <Button
+                                    Command="{Binding Source={x:Reference ExpenseRoot}, Path=BindingContext.StartEditExpenseCommand}"
+                                    CommandParameter="{Binding .}"
+                                    Text="Modifica spesa" />
+                                <Button
+                                    Command="{Binding Source={x:Reference ExpenseRoot}, Path=BindingContext.DeleteExpenseCommand}"
+                                    CommandParameter="{Binding .}"
+                                    Text="Elimina spesa" />
+                            </VerticalStackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

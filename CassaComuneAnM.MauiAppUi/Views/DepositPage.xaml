@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="CassaComuneAnM.MauiAppUi.Views.DepositPage"
+    x:Name="DepositRoot"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Versamenti">
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="18">
+            <Frame Padding="16">
+                <VerticalStackLayout Spacing="10">
+                    <Picker
+                        ItemDisplayBinding="{Binding Name}"
+                        ItemsSource="{Binding Participants}"
+                        SelectedItem="{Binding SelectedParticipant}" />
+                    <Entry Keyboard="Numeric" Placeholder="Importo" Text="{Binding Amount}" />
+                    <DatePicker Date="{Binding DepositDate}" />
+                    <Button Command="{Binding AddDepositCommand}" Text="{Binding SubmitButtonText}" />
+                    <Button Command="{Binding CancelEditCommand}" IsVisible="{Binding IsEditing}" Text="Annulla modifica" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <Label FontAttributes="Bold" FontSize="20" Text="Storico versamenti" />
+            <CollectionView EmptyView="Nessun versamento." ItemsSource="{Binding Deposits}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Margin="0,0,0,12" Padding="14">
+                            <VerticalStackLayout Spacing="6">
+                                <Label FontAttributes="Bold" Text="{Binding PayerName}" />
+                                <Label Text="{Binding Date, StringFormat='Data: {0:dd/MM/yyyy}'}" />
+                                <Label Text="{Binding Amount, StringFormat='Importo: EUR {0:F2}'}" />
+                                <Label Text="{Binding RemainingBudget, StringFormat='Residuo: EUR {0:F2}'}" />
+                                <Button
+                                    Command="{Binding Source={x:Reference DepositRoot}, Path=BindingContext.StartEditDepositCommand}"
+                                    CommandParameter="{Binding .}"
+                                    Text="Modifica versamento" />
+                                <Button
+                                    Command="{Binding Source={x:Reference DepositRoot}, Path=BindingContext.DeleteDepositCommand}"
+                                    CommandParameter="{Binding .}"
+                                    Text="Elimina versamento" />
+                            </VerticalStackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

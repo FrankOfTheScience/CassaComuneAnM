@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="CassaComuneAnM.MauiAppUi.Views.TripDetailPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Dettaglio viaggio">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Command="{Binding EditTripCommand}" Text="Modifica" />
+        <ToolbarItem Command="{Binding DeleteTripCommand}" Text="Elimina" />
+    </ContentPage.ToolbarItems>
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="16">
+            <Frame BackgroundColor="#F8FAFC" BorderColor="#D9E2EC" CornerRadius="18">
+                <VerticalStackLayout Spacing="8">
+                    <Label FontAttributes="Bold" FontSize="24" Text="{Binding Trip.TripName}" />
+                    <Entry IsVisible="{Binding IsEditingTrip}" Placeholder="Nome viaggio" Text="{Binding Trip.TripName}" />
+                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.TripCode, StringFormat='Codice: {0}'}" />
+                    <Entry IsVisible="{Binding IsEditingTrip}" Placeholder="Codice viaggio" Text="{Binding Trip.TripCode}" />
+                    <DatePicker Date="{Binding Trip.TripDate}" IsVisible="{Binding IsEditingTrip}" />
+                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.TripDate, StringFormat='Data: {0:dd/MM/yyyy}'}" />
+                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.CoordinatorName, StringFormat='Coordinatore: {0}'}" />
+                    <Entry IsVisible="{Binding IsEditingTrip}" Placeholder="Coordinatore" Text="{Binding Trip.CoordinatorName}" />
+                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.CashierName, StringFormat='Cassiere: {0}'}" />
+                    <Entry IsVisible="{Binding IsEditingTrip}" Placeholder="Cassiere" Text="{Binding Trip.CashierName}" />
+                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.Country, StringFormat='Paese: {0}'}" />
+                    <Entry IsVisible="{Binding IsEditingTrip}" Placeholder="Paese" Text="{Binding Trip.Country}" />
+                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.Currency, StringFormat='Valuta: {0}'}" />
+                    <Entry IsVisible="{Binding IsEditingTrip}" Placeholder="Valuta" Text="{Binding Trip.Currency}" />
+                    <Label IsVisible="{Binding IsEditingTrip, Converter={StaticResource InverseBooleanConverter}}" Text="{Binding Trip.ExchangeRate, StringFormat='Cambio: {0:F4}'}" />
+                    <Entry IsVisible="{Binding IsEditingTrip}" Keyboard="Numeric" Placeholder="Cambio" Text="{Binding Trip.ExchangeRate}" />
+                    <HorizontalStackLayout IsVisible="{Binding IsEditingTrip}" Spacing="12">
+                        <Button Command="{Binding SaveTripCommand}" Text="Salva viaggio" />
+                        <Button Command="{Binding CancelTripEditCommand}" Text="Annulla" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+                <Frame Grid.Column="0" Padding="14">
+                    <VerticalStackLayout>
+                        <Label FontAttributes="Bold" Text="Budget totale" />
+                        <Label FontSize="20" Text="{Binding Trip.TotalBudget, StringFormat='EUR {0:F2}'}" />
+                    </VerticalStackLayout>
+                </Frame>
+                <Frame Grid.Column="1" Padding="14">
+                    <VerticalStackLayout>
+                        <Label FontAttributes="Bold" Text="Versato" />
+                        <Label FontSize="20" Text="{Binding Trip.TotalPaid, StringFormat='EUR {0:F2}'}" />
+                    </VerticalStackLayout>
+                </Frame>
+                <Frame Grid.Row="1" Grid.Column="0" Padding="14">
+                    <VerticalStackLayout>
+                        <Label FontAttributes="Bold" Text="Spese" />
+                        <Label FontSize="20" Text="{Binding Trip.TotalExpenses, StringFormat='EUR {0:F2}'}" />
+                    </VerticalStackLayout>
+                </Frame>
+                <Frame Grid.Row="1" Grid.Column="1" Padding="14">
+                    <VerticalStackLayout>
+                        <Label FontAttributes="Bold" Text="Saldo cassa" />
+                        <Label FontSize="20" Text="{Binding Trip.CashBalance, StringFormat='EUR {0:F2}'}" />
+                    </VerticalStackLayout>
+                </Frame>
+            </Grid>
+
+            <Label FontAttributes="Bold" FontSize="20" Text="Situazione cassa" />
+            <CollectionView EmptyView="Nessun partecipante." ItemsSource="{Binding ParticipantSummaries}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Margin="0,0,0,12" Padding="14">
+                            <VerticalStackLayout Spacing="4">
+                                <Label FontAttributes="Bold" Text="{Binding Name}" />
+                                <Label Text="{Binding PersonalBudget, StringFormat='Budget: EUR {0:F2}'}" />
+                                <Label Text="{Binding TotalPaid, StringFormat='Versato: EUR {0:F2}'}" />
+                                <Label Text="{Binding RemainingBudget, StringFormat='Residuo: EUR {0:F2}'}" />
+                            </VerticalStackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Button Command="{Binding ManageParticipantsCommand}" Text="Gestisci partecipanti" />
+            <Button Command="{Binding ManageExpensesCommand}" Text="Gestisci spese" />
+            <Button Command="{Binding ManageDepositsCommand}" Text="Gestisci versamenti" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

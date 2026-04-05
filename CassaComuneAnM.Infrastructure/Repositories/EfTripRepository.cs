@@ -16,24 +16,38 @@ public class EfTripRepository : ITripRepository
     }
 
     public async Task<List<Trip>> GetAllAsync()
-        => await _dbSet.ToListAsync();
+        => await _dbSet
+            .Include(t => t.Participants)
+            .Include(t => t.Deposits)
+            .Include(t => t.Expenses)
+            .ToListAsync();
 
     public async Task<Trip?> GetByIdAsync(object id)
-        => await _dbSet.FindAsync(id);
+        => await _dbSet
+            .Include(t => t.Participants)
+                .ThenInclude(p => p.Deposits)
+            .Include(t => t.Deposits)
+            .Include(t => t.Expenses)
+                .ThenInclude(e => e.ExpenseParticipants)
+                    .ThenInclude(ep => ep.Participant)
+            .FirstOrDefaultAsync(t => t.Id == (int)id);
 
-    public async Task AddAsync(Trip entity)
+    public Task AddAsync(Trip entity)
     {
         _dbSet.Add(entity);
+        return Task.CompletedTask;
     }
 
-    public async Task UpdateAsync(Trip entity)
+    public Task UpdateAsync(Trip entity)
     {
         _dbSet.Update(entity);
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(Trip entity)
+    public Task DeleteAsync(Trip entity)
     {
         _dbSet.Remove(entity);
+        return Task.CompletedTask;
     }
 
     public async Task SaveChangesAsync()
@@ -46,6 +60,7 @@ public class EfTripRepository : ITripRepository
     {
         return await _context.Trips
             .Include(t => t.Participants)
+                .ThenInclude(p => p.Deposits)
             .Include(t => t.Deposits)
             .Include(t => t.Expenses)
                 .ThenInclude(e => e.ExpenseParticipants)

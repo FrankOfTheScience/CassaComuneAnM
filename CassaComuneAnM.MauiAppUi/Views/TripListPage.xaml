@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="CassaComuneAnM.MauiAppUi.Views.TripListPage"
+    x:Name="TripListRoot"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Viaggi">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Command="{Binding CreateTripCommand}" Text="Nuovo" />
+    </ContentPage.ToolbarItems>
+
+    <Grid Padding="20">
+        <CollectionView EmptyView="Nessun viaggio salvato." ItemsSource="{Binding Trips}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame Margin="0,0,0,14" Padding="16">
+                        <VerticalStackLayout Spacing="8">
+                            <Label FontAttributes="Bold" FontSize="18" Text="{Binding TripName}" />
+                            <Label Text="{Binding TripCode, StringFormat='Codice: {0}'}" />
+                            <Label Text="{Binding TripDate, StringFormat='Data: {0:dd/MM/yyyy}'}" />
+                            <Label Text="{Binding Country, StringFormat='Paese: {0}'}" />
+                            <Button
+                                Command="{Binding Source={x:Reference TripListRoot}, Path=BindingContext.OpenTripCommand}"
+                                CommandParameter="{Binding .}"
+                                Text="Apri dettaglio" />
+                        </VerticalStackLayout>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>

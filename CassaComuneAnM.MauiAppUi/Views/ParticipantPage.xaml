@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="CassaComuneAnM.MauiAppUi.Views.ParticipantPage"
+    x:Name="ParticipantRoot"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Partecipanti">
+    <Grid Padding="20" RowDefinitions="Auto,*" RowSpacing="20">
+        <Frame Padding="16">
+            <VerticalStackLayout Spacing="10">
+                <Entry Placeholder="Nome partecipante" Text="{Binding ParticipantName}" />
+                <Entry Keyboard="Numeric" Placeholder="Budget personale" Text="{Binding PersonalBudget}" />
+                <Button Command="{Binding AddParticipantCommand}" Text="Aggiungi partecipante" />
+            </VerticalStackLayout>
+        </Frame>
+
+        <CollectionView Grid.Row="1" EmptyView="Nessun partecipante." ItemsSource="{Binding Participants}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame Margin="0,0,0,12" Padding="14">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                            <Label FontAttributes="Bold" Text="{Binding Name}" />
+                            <Button
+                                Grid.Column="1"
+                                Command="{Binding Source={x:Reference ParticipantRoot}, Path=BindingContext.RemoveParticipantCommand}"
+                                CommandParameter="{Binding .}"
+                                Text="Rimuovi" />
+                            <Label Grid.Row="1" Text="{Binding PersonalBudget, StringFormat='Budget: € {0:F2}'}" />
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>

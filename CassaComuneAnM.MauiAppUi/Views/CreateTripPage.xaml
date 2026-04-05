@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="CassaComuneAnM.MauiAppUi.Views.CreateTripPage"
+    x:Name="CreateTripRoot"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Nuovo viaggio">
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="14">
+            <Entry Placeholder="Nome viaggio" Text="{Binding TripName}" />
+            <Entry Placeholder="Codice viaggio" Text="{Binding TripCode}" />
+            <DatePicker Date="{Binding TripDate}" />
+            <Entry Placeholder="Nome coordinatore" Text="{Binding CoordinatorName}" />
+            <Entry Placeholder="Codice coordinatore" Text="{Binding CoordinatorCode}" />
+            <Entry Placeholder="Nome cassiere" Text="{Binding CashierName}" />
+            <Entry Placeholder="Paese" Text="{Binding Country}" />
+            <Entry Placeholder="Valuta" Text="{Binding Currency}" />
+            <Entry Keyboard="Numeric" Placeholder="Tasso di cambio" Text="{Binding ExchangeRate}" />
+            <Entry Keyboard="Numeric" Placeholder="Budget iniziale per partecipante" Text="{Binding BudgetPerPax}" />
+
+            <Frame Padding="16">
+                <VerticalStackLayout Spacing="10">
+                    <Label FontAttributes="Bold" FontSize="18" Text="Partecipanti iniziali" />
+                    <Entry Placeholder="Nome partecipante" Text="{Binding ParticipantName}" />
+                    <Entry Keyboard="Numeric" Placeholder="Budget personale" Text="{Binding ParticipantBudget}" />
+                    <Button Command="{Binding AddParticipantCommand}" Text="Aggiungi partecipante" />
+
+                    <CollectionView EmptyView="Nessun partecipante iniziale." ItemsSource="{Binding Participants}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame Margin="0,0,0,10" Padding="12">
+                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                                        <Label FontAttributes="Bold" Text="{Binding Name}" />
+                                        <Button
+                                            Grid.Column="1"
+                                            Command="{Binding Source={x:Reference CreateTripRoot}, Path=BindingContext.RemoveParticipantCommand}"
+                                            CommandParameter="{Binding .}"
+                                            Text="Rimuovi" />
+                                        <Label Grid.Row="1" Text="{Binding PersonalBudget, StringFormat='Budget: EUR {0:F2}'}" />
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+
+            <Button Command="{Binding SaveTripCommand}" Text="Salva viaggio" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
