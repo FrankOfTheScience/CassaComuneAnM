@@ -124,8 +124,8 @@ public class CreateTripViewModel : BaseViewModel
         SelectedCurrency switch
         {
             null => "Cambio contro EUR, es. USD 1,10 = 1 EUR vale 1,10 USD",
-            CurrencyCode.EUR => "Cambio contro EUR, per EUR lascia vuoto oppure inserisci 1",
-            _ => $"Cambio contro EUR, es. {SelectedCurrency} 1,10 = 1 EUR vale 1,10 {SelectedCurrency}"
+            CurrencyCode.EUR => "Per EUR lascia vuoto o inserisci 1,00",
+            _ => $"Es. {SelectedCurrency} 1,10"
         };
 
     public string ExchangeRateHelpText =>

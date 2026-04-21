@@ -97,8 +97,8 @@ public class TripDetailViewModel : BaseViewModel
         SelectedCurrency switch
         {
             null => "Cambio contro EUR, es. USD 1,10 = 1 EUR vale 1,10 USD",
-            CurrencyCode.EUR => "Cambio contro EUR, per EUR lascia 1",
-            _ => $"Cambio contro EUR, es. {SelectedCurrency} 1,10 = 1 EUR vale 1,10 {SelectedCurrency}"
+            CurrencyCode.EUR => "Per EUR lascia vuoto o inserisci 1,00",
+            _ => $"Es. {SelectedCurrency} 1,10"
         };
 
     public string ExchangeRateHelpText =>
@@ -181,9 +181,9 @@ public class TripDetailViewModel : BaseViewModel
         _tripCode = tripCode;
         Title = "Dettaglio viaggio";
 
-        ManageParticipantsCommand = new Command(async () => await Navigation!.PushAsync(new ParticipantPage(_serviceProvider, _tripCode)));
-        ManageExpensesCommand = new Command(async () => await Navigation!.PushAsync(new ExpensePage(_serviceProvider, _tripCode)));
-        ManageDepositsCommand = new Command(async () => await Navigation!.PushAsync(new DepositPage(_serviceProvider, _tripCode)));
+        ManageParticipantsCommand = new Command(async () => await OpenPageAsync(() => new ParticipantPage(_serviceProvider, _tripCode)));
+        ManageExpensesCommand = new Command(async () => await OpenPageAsync(() => new ExpensePage(_serviceProvider, _tripCode)));
+        ManageDepositsCommand = new Command(async () => await OpenPageAsync(() => new DepositPage(_serviceProvider, _tripCode)));
         DeleteTripCommand = new Command(async () => await DeleteTripAsync());
         EditTripCommand = new Command(StartTripEdit);
         SaveTripCommand = new Command(async () => await SaveTripAsync());
@@ -288,6 +288,19 @@ public class TripDetailViewModel : BaseViewModel
         {
             await _tripService.DeleteTripAsync(_tripCode);
             await Navigation!.PopAsync();
+        });
+    }
+
+    private async Task OpenPageAsync(Func<Page> pageFactory)
+    {
+        await RunBusyAsync(async () =>
+        {
+            if (Navigation is null)
+            {
+                throw new InvalidOperationException("Navigazione non disponibile.");
+            }
+
+            await Navigation.PushAsync(pageFactory());
         });
     }
 

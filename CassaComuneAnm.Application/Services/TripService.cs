@@ -19,10 +19,12 @@ public class TripService : ITripService
     }
 
     public async Task<IEnumerable<Trip>> GetAllTripsAsync() =>
-        await _tripRepo.GetAllAsync();
+        (await _tripRepo.GetAllAsync())
+            .Select(NormalizeTrip)
+            .OfType<Trip>();
 
     public async Task<Trip?> GetTripByCodeAsync(string tripCode) =>
-        await _tripRepo.GetByCodeWithDetailsAsync(tripCode);
+        NormalizeTrip(await _tripRepo.GetByCodeWithDetailsAsync(tripCode));
 
     public async Task CreateTripAsync(Trip trip)
     {
@@ -50,6 +52,9 @@ public class TripService : ITripService
     {
         var trip = await GetTripByCodeAsync(tripCode);
         if (trip == null) return;
+        trip.Participants ??= new List<Participant>();
+        participant.Deposits ??= new List<Deposit>();
+        participant.ExpenseParticipants ??= new List<ExpenseParticipant>();
         trip.Participants.Add(participant);
         await SaveOrUpdateTripAsync(trip);
     }
@@ -161,7 +166,7 @@ public class TripService : ITripService
     public async Task<List<Expense>> GetExpensesAsync(string tripCode)
     {
         var trip = await _tripRepo.GetByCodeWithDetailsAsync(tripCode);
-        return trip?.Expenses ?? new List<Expense>();
+        return NormalizeTrip(trip)?.Expenses ?? new List<Expense>();
     }
 
     public async Task DeleteExpenseAsync(string tripCode, int expenseId)
@@ -278,7 +283,7 @@ public class TripService : ITripService
     public async Task<List<Deposit>> GetDepositsAsync(string tripCode)
     {
         var trip = await _tripRepo.GetByCodeWithDetailsAsync(tripCode);
-        return trip?.Deposits ?? new List<Deposit>();
+        return NormalizeTrip(trip)?.Deposits ?? new List<Deposit>();
     }
 
     public async Task DeleteDepositAsync(string tripCode, int depositId)
@@ -360,4 +365,45 @@ public class TripService : ITripService
 
     public async Task<decimal> GetCashBalanceAsync(string tripCode) =>
         (await GetTripByCodeAsync(tripCode))?.CashBalance ?? 0m;
+
+    private static Trip? NormalizeTrip(Trip? trip)
+    {
+        if (trip is null)
+        {
+            return null;
+        }
+
+        trip.TripName ??= string.Empty;
+        trip.TripCode ??= string.Empty;
+        trip.CoordinatorName ??= string.Empty;
+        trip.CoordinatorCode ??= string.Empty;
+        trip.CashierName ??= string.Empty;
+        trip.Country ??= string.Empty;
+        trip.Currency ??= "EUR";
+        trip.Participants ??= new List<Participant>();
+        trip.Expenses ??= new List<Expense>();
+        trip.Deposits ??= new List<Deposit>();
+
+        foreach (var participant in trip.Participants)
+        {
+            participant.Name ??= string.Empty;
+            participant.Deposits ??= new List<Deposit>();
+            participant.ExpenseParticipants ??= new List<ExpenseParticipant>();
+            participant.Trip ??= trip;
+        }
+
+        foreach (var expense in trip.Expenses)
+        {
+            expense.Description ??= string.Empty;
+            expense.ExpenseParticipants ??= new List<ExpenseParticipant>();
+        }
+
+        foreach (var deposit in trip.Deposits)
+        {
+            deposit.PayerName ??= string.Empty;
+            deposit.Trip ??= trip;
+        }
+
+        return trip;
+    }
 }
