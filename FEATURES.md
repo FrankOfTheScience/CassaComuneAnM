@@ -102,30 +102,35 @@ Significa:
 
 Effetto pratico:
 
-- il sistema costruisce la spesa principale sui beneficiari effettivi
-- genera le compensazioni interne necessarie per mantenere corretta la ripartizione
+- il sistema costruisce la spesa principale sui partecipanti alla spesa effettivi
+- genera automaticamente un importo di rimborso per chi non ha partecipato
+- mantiene la ripartizione corretta tra chi ha effettivamente beneficiato della spesa
 
 In altre parole:
 
 - escludere uno o piu partecipanti modifica il gruppo che beneficia della spesa
-- questo puo generare importi di rimborso o redistribuzione coerenti con la logica interna della cassa
+- chi non partecipa riceve un rimborso o un credito interno corrispondente
+- i partecipanti paganti dividono il costo effettivo tra loro
 
 ## 6. Logica Tour Leader Free
 
-La modalita `Tour Leader Free` serve quando il coordinatore beneficia della spesa ma non deve partecipare economicamente al costo.
+La modalita `Tour Leader Free` serve quando il coordinatore ottiene una gratuità per un servizio di terra, ma la spesa è condivisa tra tutti.
 
-Cosa succede:
+Esempio pratico:
 
-- il coordinatore continua a far parte del gruppo beneficiario
-- la sua quota non viene pagata da lui
-- quella quota viene redistribuita sugli altri partecipanti paganti
+* partecipanti: 9 + 1 coordinatore
+* costo di un biglietto: 2 EUR a testa → totale 20 EUR
+* Tour Leader Free attivo: il coordinatore non paga la sua quota
+* totale reale da pagare: 18 EUR
+* la spesa totale viene divisa tra tutti i 10 partecipanti, quindi: 18 ÷ 10 = 1,8 EUR a testa
 
 Effetto:
 
-- il coordinatore usufruisce del servizio
-- il costo effettivo viene ripartito solo sugli altri che devono contribuire
+* il coordinatore usufruisce della spesa gratuitamente
+* il risparmio del coordinatore viene ripartito su tutti i partecipanti
+* ogni partecipante paga una quota leggermente inferiore rispetto al costo standard
 
-Questo e utile, per esempio, per:
+Questa logica si applica a qualsiasi tipo di spesa dove il coordinatore deve usufruire ma non contribuire economicamente, ad esempio:
 
 - hotel
 - ingressi
@@ -191,7 +196,7 @@ Questo vale per:
 
 ## 10. Release e distribuzione
 
-La 2.0 e pensata per essere distribuita da GitHub Releases.
+La 2.x e pensata per essere distribuita da GitHub Releases.
 
 La pipeline su `master` esegue:
 
