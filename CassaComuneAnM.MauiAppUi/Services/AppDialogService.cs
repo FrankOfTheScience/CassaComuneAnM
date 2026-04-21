@@ -21,7 +21,7 @@ public sealed class AppDialogService : IAppDialogService
         return ShowDialogAsync(title, message, new[]
         {
             new DialogAction<string>(actionText, "PrimaryButton", actionText)
-        });
+        }, showDismissButton: false);
     }
 
     public async Task<bool> ShowConfirmAsync(string title, string message, string acceptText = "CONFERMA", string cancelText = "ANNULLA")
@@ -45,25 +45,53 @@ public sealed class AppDialogService : IAppDialogService
 
         var completion = new TaskCompletionSource<T?>();
         var listLayout = new VerticalStackLayout { Spacing = 10 };
-
-        foreach (var item in items)
+        DialogHostPage? page = null;
+        var searchEntry = new Entry
         {
-            var button = new Button
-            {
-                Text = labelSelector(item),
-                Style = (Style?)Application.Current?.Resources["DialogSecondaryButton"],
-                HorizontalOptions = LayoutOptions.Fill,
-                BorderWidth = EqualityComparer<T>.Default.Equals(item, selected) ? 2 : 1
-            };
+            Placeholder = "Cerca valuta o codice",
+            ClearButtonVisibility = ClearButtonVisibility.WhileEditing,
+            IsVisible = items.Count > 8
+        };
 
-            button.Clicked += async (_, _) =>
-            {
-                completion.TrySetResult(item);
-                await hostPage.Navigation.PopModalAsync(false);
-            };
+        void RebuildList(string? searchText)
+        {
+            listLayout.Children.Clear();
 
-            listLayout.Add(button);
+            var filteredItems = string.IsNullOrWhiteSpace(searchText)
+                ? items
+                : items.Where(item => labelSelector(item).Contains(searchText.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
+
+            foreach (var item in filteredItems)
+            {
+                var button = new Button
+                {
+                    Text = labelSelector(item),
+                    Style = (Style?)Application.Current?.Resources["DialogSecondaryButton"],
+                    HorizontalOptions = LayoutOptions.Fill,
+                    BorderWidth = EqualityComparer<T>.Default.Equals(item, selected) ? 2 : 1
+                };
+
+                button.Clicked += async (_, _) =>
+                {
+                    completion.TrySetResult(item);
+                    await DismissModalAsync(page);
+                };
+
+                listLayout.Add(button);
+            }
+
+            if (!filteredItems.Any())
+            {
+                listLayout.Add(new Label
+                {
+                    Text = "Nessun risultato.",
+                    Style = (Style?)Application.Current?.Resources["MutedLabel"]
+                });
+            }
         }
+
+        searchEntry.TextChanged += (_, args) => RebuildList(args.NewTextValue);
+        RebuildList(null);
 
         var scrollableList = new ScrollView
         {
@@ -71,10 +99,20 @@ public sealed class AppDialogService : IAppDialogService
             MaximumHeightRequest = 420
         };
 
-        var page = CreateHostPage(title, message, scrollableList, null, async () =>
+        var content = new VerticalStackLayout
+        {
+            Spacing = 12,
+            Children =
+            {
+                searchEntry,
+                scrollableList
+            }
+        };
+
+        page = CreateHostPage(title, message, content, null, async () =>
         {
             completion.TrySetResult(default);
-            await hostPage.Navigation.PopModalAsync(false);
+            await DismissModalAsync(page);
         });
         await hostPage.Navigation.PushModalAsync(page, false);
         return await completion.Task;
@@ -90,6 +128,7 @@ public sealed class AppDialogService : IAppDialogService
 
         var completion = new TaskCompletionSource<string?>();
         var content = new VerticalStackLayout { Spacing = 10 };
+        DialogHostPage? page = null;
 
         foreach (var row in rows)
         {
@@ -136,16 +175,16 @@ public sealed class AppDialogService : IAppDialogService
             button.Clicked += async (_, _) =>
             {
                 completion.TrySetResult(action);
-                await hostPage.Navigation.PopModalAsync(false);
+                await DismissModalAsync(page);
             };
 
             buttons.Add(button);
         }
 
-        var page = CreateHostPage(title, string.Empty, content, buttons, async () =>
+        page = CreateHostPage(title, string.Empty, content, buttons, async () =>
         {
             completion.TrySetResult(null);
-            await hostPage.Navigation.PopModalAsync(false);
+            await DismissModalAsync(page);
         });
 
         await hostPage.Navigation.PushModalAsync(page, false);
@@ -161,6 +200,7 @@ public sealed class AppDialogService : IAppDialogService
         }
 
         var completion = new TaskCompletionSource<DateTime?>();
+        DialogHostPage? page = null;
         var currentDate = selectedDate.Date;
         var visibleMonth = new DateTime(currentDate.Year, currentDate.Month, 1);
         var previewLabel = new Label
@@ -316,7 +356,7 @@ public sealed class AppDialogService : IAppDialogService
         confirmButton.Clicked += async (_, _) =>
         {
             completion.TrySetResult(currentDate);
-            await hostPage.Navigation.PopModalAsync(false);
+            await DismissModalAsync(page);
         };
 
         var cancelButton = new Button
@@ -327,22 +367,22 @@ public sealed class AppDialogService : IAppDialogService
         cancelButton.Clicked += async (_, _) =>
         {
             completion.TrySetResult(null);
-            await hostPage.Navigation.PopModalAsync(false);
+            await DismissModalAsync(page);
         };
 
         actions.Add(confirmButton);
         actions.Add(cancelButton);
 
-        var page = CreateHostPage(title, message, content, actions, async () =>
+        page = CreateHostPage(title, message, content, actions, async () =>
         {
             completion.TrySetResult(null);
-            await hostPage.Navigation.PopModalAsync(false);
+            await DismissModalAsync(page);
         });
         await hostPage.Navigation.PushModalAsync(page, false);
         return await completion.Task;
     }
 
-    private async Task<T> ShowDialogAsync<T>(string title, string message, IReadOnlyList<DialogAction<T>> actions)
+    private async Task<T> ShowDialogAsync<T>(string title, string message, IReadOnlyList<DialogAction<T>> actions, bool showDismissButton = true)
     {
         var hostPage = GetActivePage();
         if (hostPage is null)
@@ -351,6 +391,7 @@ public sealed class AppDialogService : IAppDialogService
         }
 
         var completion = new TaskCompletionSource<T>();
+        DialogHostPage? page = null;
         var buttonRow = new VerticalStackLayout
         {
             Spacing = 10,
@@ -373,22 +414,22 @@ public sealed class AppDialogService : IAppDialogService
             button.Clicked += async (_, _) =>
             {
                 completion.TrySetResult(action.Result);
-                await hostPage.Navigation.PopModalAsync(false);
+                await DismissModalAsync(page);
             };
 
             buttonRow.Add(button);
         }
 
-        var page = CreateHostPage(title, message, buttonRow, null, async () =>
+        page = CreateHostPage(title, message, buttonRow, null, async () =>
         {
             completion.TrySetResult(actions.Last().Result);
-            await hostPage.Navigation.PopModalAsync(false);
-        });
+            await DismissModalAsync(page);
+        }, showDismissButton);
         await hostPage.Navigation.PushModalAsync(page, false);
         return await completion.Task;
     }
 
-    private static ContentPage CreateHostPage(string title, string message, View content, View? footer = null, Func<Task>? dismissAction = null)
+    private static DialogHostPage CreateHostPage(string title, string message, View content, View? footer = null, Func<Task>? dismissAction = null, bool showDismissButton = true)
     {
         var overlay = new Grid
         {
@@ -419,11 +460,11 @@ public sealed class AppDialogService : IAppDialogService
             Style = (Style?)Application.Current?.Resources["SectionLabel"]
         });
 
-        if (dismissAction is not null)
+        if (dismissAction is not null && showDismissButton)
         {
             var closeButton = new Button
             {
-                Text = "CHIUDI",
+                Text = "X",
                 Style = (Style?)Application.Current?.Resources["ChipGhostButton"],
                 Padding = new Thickness(10, 6),
                 Margin = 0
@@ -472,6 +513,20 @@ public sealed class AppDialogService : IAppDialogService
             BackgroundColor = Colors.Transparent,
             Content = overlay
         };
+    }
+
+    private static async Task DismissModalAsync(Page? page)
+    {
+        if (page?.Navigation?.ModalStack?.Contains(page) == true)
+        {
+            await page.Navigation.PopModalAsync(false);
+            return;
+        }
+
+        if (GetActivePage()?.Navigation?.ModalStack?.Count > 0)
+        {
+            await GetActivePage()!.Navigation.PopModalAsync(false);
+        }
     }
 
     private static Page? GetActivePage()

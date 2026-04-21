@@ -48,8 +48,7 @@ public class ParticipantViewModel : BaseViewModel
     public string SelectedSortOption => _selectedSortOption;
     public string SortDirectionLabel => _sortDescending ? "DESC" : "ASC";
 
-    public string PersonalBudgetPlaceholder =>
-        "Budget personale in EUR";
+    public string PersonalBudgetPlaceholder => "Budget personale in EUR";
 
     public string PersonalBudgetHelpText =>
         _trip?.BudgetPerPax > 0
@@ -79,20 +78,21 @@ public class ParticipantViewModel : BaseViewModel
     {
         _trip = await _tripService.GetTripByCodeAsync(_tripCode);
         Participants.Clear();
+        _allParticipants.Clear();
         OnPropertyChanged(nameof(PersonalBudgetPlaceholder));
+        OnPropertyChanged(nameof(PersonalBudgetHelpText));
 
         if (_trip is null)
         {
             return;
         }
 
-        _allParticipants.Clear();
-        foreach (var participant in _trip.Participants.OrderBy(p => p.Name))
+        foreach (var participant in (_trip.Participants ?? new List<Participant>()).OrderBy(p => p.Name ?? string.Empty))
         {
             _allParticipants.Add(new ParticipantListItemViewModel
             {
-                Name = participant.Name,
-                ParticipantName = participant.Name,
+                Name = participant.Name ?? string.Empty,
+                ParticipantName = participant.Name ?? string.Empty,
                 BudgetInEur = participant.PersonalBudget,
                 BudgetPrimaryDisplay = CurrencyDisplayService.FormatPrimaryAmount(participant.PersonalBudget, _trip),
                 BudgetSecondaryDisplay = CurrencyDisplayService.FormatSecondaryEurAmount(participant.PersonalBudget, _trip)
@@ -121,7 +121,7 @@ public class ParticipantViewModel : BaseViewModel
             return;
         }
 
-        if (_trip.Participants.Any(p => string.Equals(p.Name, ParticipantName.Trim(), StringComparison.OrdinalIgnoreCase)))
+        if ((_trip.Participants ?? new List<Participant>()).Any(p => string.Equals(p.Name, ParticipantName.Trim(), StringComparison.OrdinalIgnoreCase)))
         {
             await ShowAlertAsync("Duplicato", "Esiste già un partecipante con questo nome.");
             return;

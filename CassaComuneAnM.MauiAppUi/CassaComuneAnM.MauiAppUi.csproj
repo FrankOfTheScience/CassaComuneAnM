@@ -2,7 +2,8 @@
 
 	<PropertyGroup>
 		<TargetFrameworks Condition="'$(CI_ANDROID_BUILD)' == 'true'">net8.0-android</TargetFrameworks>
-		<TargetFrameworks Condition="'$(CI_ANDROID_BUILD)' != 'true'">net8.0-windows10.0.19041.0</TargetFrameworks>
+		<TargetFrameworks Condition="'$(CI_ANDROID_BUILD)' != 'true' and '$(OS)' == 'Windows_NT'">net8.0-windows10.0.19041.0;net8.0-android</TargetFrameworks>
+		<TargetFrameworks Condition="'$(CI_ANDROID_BUILD)' != 'true' and '$(OS)' != 'Windows_NT'">net8.0-windows10.0.19041.0</TargetFrameworks>
 		<!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
 		<!-- <TargetFrameworks>$(TargetFrameworks);net8.0-tizen</TargetFrameworks> -->
 
@@ -21,7 +22,7 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Display name -->
-		<ApplicationTitle>CassaComuneAnM.MauiAppUi</ApplicationTitle>
+		<ApplicationTitle>Cassa Comune AnM</ApplicationTitle>
 
 		<!-- App Identifier -->
 		<ApplicationId>com.companyname.cassacomuneanm.mauiappui</ApplicationId>
@@ -40,10 +41,10 @@
 
 	<ItemGroup>
 		<!-- App Icon -->
-		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
+		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#04884A" />
 
 		<!-- Splash Screen -->
-		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
+		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#04884A" BaseSize="128,128" />
 
 		<!-- Images -->
 		<MauiImage Include="Resources\Images\*" />
@@ -63,8 +64,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\CassaComuneAnm.Application\CassaComuneAnm.Application.csproj" GlobalPropertiesToRemove="TargetFramework;TargetFrameworks" SetTargetFramework="TargetFramework=net8.0" />
-	  <ProjectReference Include="..\CassaComuneAnM.Infrastructure\CassaComuneAnM.Infrastructure.csproj" GlobalPropertiesToRemove="TargetFramework;TargetFrameworks" SetTargetFramework="TargetFramework=net8.0" />
+	  <ProjectReference Include="..\CassaComuneAnm.Application\CassaComuneAnm.Application.csproj" />
+	  <ProjectReference Include="..\CassaComuneAnM.Infrastructure\CassaComuneAnM.Infrastructure.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

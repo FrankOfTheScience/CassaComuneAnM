@@ -79,12 +79,33 @@ public class TripListViewModel : BaseViewModel
             return;
         }
 
-        await Navigation!.PushAsync(new TripDetailPage(_serviceProvider, trip.TripCode));
+        await RunBusyAsync(async () =>
+        {
+            if (Navigation is null)
+            {
+                throw new InvalidOperationException("Navigazione non disponibile.");
+            }
+
+            if (string.IsNullOrWhiteSpace(trip.TripCode))
+            {
+                throw new InvalidOperationException("Il viaggio selezionato non ha un codice valido.");
+            }
+
+            await Navigation.PushAsync(new TripDetailPage(_serviceProvider, trip.TripCode));
+        });
     }
 
     private async Task CreateTripAsync()
     {
-        await Navigation!.PushAsync(_serviceProvider.GetRequiredService<CreateTripPage>());
+        await RunBusyAsync(async () =>
+        {
+            if (Navigation is null)
+            {
+                throw new InvalidOperationException("Navigazione non disponibile.");
+            }
+
+            await Navigation.PushAsync(_serviceProvider.GetRequiredService<CreateTripPage>());
+        });
     }
 
     private async Task SelectSortAsync()
@@ -119,16 +140,16 @@ public class TripListViewModel : BaseViewModel
         {
             var term = SearchText.Trim();
             query = query.Where(trip =>
-                trip.TripName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                trip.TripCode.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                trip.Country.Contains(term, StringComparison.OrdinalIgnoreCase));
+                (trip.TripName?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (trip.TripCode?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (trip.Country?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false));
         }
 
         query = _selectedSortOption switch
         {
-            "NOME" => _sortDescending ? query.OrderByDescending(trip => trip.TripName) : query.OrderBy(trip => trip.TripName),
-            "CODICE" => _sortDescending ? query.OrderByDescending(trip => trip.TripCode) : query.OrderBy(trip => trip.TripCode),
-            "PAESE" => _sortDescending ? query.OrderByDescending(trip => trip.Country) : query.OrderBy(trip => trip.Country),
+            "NOME" => _sortDescending ? query.OrderByDescending(trip => trip.TripName ?? string.Empty) : query.OrderBy(trip => trip.TripName ?? string.Empty),
+            "CODICE" => _sortDescending ? query.OrderByDescending(trip => trip.TripCode ?? string.Empty) : query.OrderBy(trip => trip.TripCode ?? string.Empty),
+            "PAESE" => _sortDescending ? query.OrderByDescending(trip => trip.Country ?? string.Empty) : query.OrderBy(trip => trip.Country ?? string.Empty),
             _ => _sortDescending ? query.OrderByDescending(trip => trip.TripDate) : query.OrderBy(trip => trip.TripDate)
         };
 
