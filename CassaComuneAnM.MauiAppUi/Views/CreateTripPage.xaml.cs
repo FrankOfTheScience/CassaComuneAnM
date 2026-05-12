@@ -1,12 +1,38 @@
 using CassaComuneAnM.MauiAppUi.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CassaComuneAnM.MauiAppUi.Views;
 
-public partial class CreateTripPage : ContentPage
+public partial class CreateTripPage : ContentPage, IDisposable
 {
-    public CreateTripPage(CreateTripViewModel viewModel)
+    private readonly IServiceScope _scope;
+    private bool _disposed;
+
+    public CreateTripPage(IServiceProvider serviceProvider)
     {
         InitializeComponent();
-        BindingContext = viewModel;
+        _scope = serviceProvider.CreateScope();
+        BindingContext = ActivatorUtilities.CreateInstance<CreateTripViewModel>(_scope.ServiceProvider);
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+
+        if (Navigation?.NavigationStack.Contains(this) != true)
+        {
+            Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _scope.Dispose();
+        _disposed = true;
     }
 }
