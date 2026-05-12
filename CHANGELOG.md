@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/FrankOfTheScience/CassaComuneAnM/compare/v1.1.0...v1.1.1) (2026-05-12)
+
+
+### Bug Fixes
+
+* **maui:** stabilize trip pages and Android resources ([950e1ce](https://github.com/FrankOfTheScience/CassaComuneAnM/commit/950e1ce722d30e173d701b438102fb3afee9a5fd))
+
 # [1.1.0](https://github.com/FrankOfTheScience/CassaComuneAnM/compare/v1.0.0...v1.1.0) (2026-04-21)
 
 
