@@ -3,19 +3,43 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace CassaComuneAnM.MauiAppUi.Views;
 
-public partial class ParticipantPage : ContentPage
+public partial class ParticipantPage : ContentPage, IDisposable
 {
+    private readonly IServiceScope _scope;
     private readonly ParticipantViewModel _viewModel;
+    private bool _disposed;
 
     public ParticipantPage(IServiceProvider serviceProvider, string tripCode)
     {
         InitializeComponent();
-        BindingContext = _viewModel = ActivatorUtilities.CreateInstance<ParticipantViewModel>(serviceProvider, tripCode);
+        _scope = serviceProvider.CreateScope();
+        BindingContext = _viewModel = ActivatorUtilities.CreateInstance<ParticipantViewModel>(_scope.ServiceProvider, tripCode);
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
         await _viewModel.LoadAsync();
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+
+        if (Navigation?.NavigationStack.Contains(this) != true)
+        {
+            Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _scope.Dispose();
+        _disposed = true;
     }
 }
